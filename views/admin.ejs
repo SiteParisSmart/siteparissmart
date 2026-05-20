@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Paris</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-red-500">Zone Admin 🔐</h1>
+            <a href="/" class="text-blue-400 hover:text-blue-300 underline font-medium">← Retour au site</a>
+        </div>
+
+        <section class="bg-gray-800 p-6 rounded-2xl mb-12 border border-gray-700 shadow-xl">
+            <h2 class="text-xl font-bold mb-6 text-green-400 flex items-center gap-2">
+                <span>🆕</span> Créer un nouveau Match
+            </h2>
+            <form action="/admin/match" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex gap-2">
+                    <input type="text" name="code1" placeholder="FR" class="w-20 bg-gray-900 p-3 rounded-xl border border-gray-700 text-center uppercase font-bold text-blue-400" maxlength="2" required>
+                    <input type="text" name="team1" placeholder="Équipe Domicile" class="flex-1 bg-gray-900 p-3 rounded-xl border border-gray-700" required>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" name="code2" placeholder="DE" class="w-20 bg-gray-900 p-3 rounded-xl border border-gray-700 text-center uppercase font-bold text-blue-400" maxlength="2" required>
+                    <input type="text" name="team2" placeholder="Équipe Extérieur" class="flex-1 bg-gray-900 p-3 rounded-xl border border-gray-700" required>
+                </div>
+                <input type="datetime-local" name="date" class="bg-gray-900 p-3 rounded-xl border border-gray-700 w-full" required>
+                <button type="submit" class="bg-green-600 py-3 rounded-xl font-black hover:bg-green-500 uppercase tracking-widest transition-all">
+                    Ajouter le Match
+                </button>
+            </form>
+        </section>
+
+        <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl mb-12">
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <span>🏆</span> Résultats & Direct
+            </h2>
+            
+            <div class="space-y-4">
+                <% if (matches && matches.length > 0) { %>
+                    <% matches.forEach(match => { %>
+                        <div class="bg-gray-900/50 p-4 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-gray-700">
+                            <div class="flex items-center gap-3">
+                                <img src="https://flagcdn.com/w40/<%= match.code1.toLowerCase() %>.png" class="w-8 rounded-sm">
+                                <span class="text-white font-bold"><%= match.teams %></span>
+                                <img src="https://flagcdn.com/w40/<%= match.code2.toLowerCase() %>.png" class="w-8 rounded-sm">
+                            </div>
+
+                            <div class="flex items-center gap-4">
+                                <% if (!match.result) { %>
+                                    <form action="/admin/match/result" method="POST" class="flex items-center gap-2 bg-black/30 p-1 rounded-lg">
+                                        <input type="hidden" name="matchId" value="<%= match._id %>">
+                                        <button name="result" value="1" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">1</button>
+                                        <button name="result" value="N" class="bg-gray-600 hover:bg-gray-500 text-white w-8 h-8 rounded font-bold">N</button>
+                                        <button name="result" value="2" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">2</button>
+                                    </form>
+                                <% } else { %>
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-green-900/30 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-800">
+                                            RÉSULTAT : <%= match.result %>
+                                        </span>
+                                        <form action="/admin/match/result" method="POST">
+                                            <input type="hidden" name="matchId" value="<%= match._id %>">
+                                            <button name="result" value="" class="text-gray-500 hover:text-white text-xs underline">Modifier</button>
+                                        </form>
+                                    </div>
+                                <% } %>
+
+                                <form action="/admin/match/delete" method="POST" onsubmit="return confirm('Supprimer ce match ?')">
+                                    <input type="hidden" name="matchId" value="<%= match._id %>">
+                                    <button class="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="text-gray-500 italic text-center py-4">Aucun match créé pour le moment.</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 overflow-hidden">
+            <h2 class="text-xl font-bold p-6 border-b border-gray-700 flex items-center gap-2">
+                <span>📋</span> Paris enregistrés
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs tracking-widest">
+                        <tr>
+                            <th class="p-4">Joueur</th>
+                            <th class="p-4 text-center">Match</th>
+                            <th class="p-4 text-center">Pari</th>
+                            <th class="p-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <% if (bets && bets.length > 0) { %>
+                            <% bets.forEach(bet => { %>
+                                <tr class="hover:bg-gray-700/30 transition-colors">
+                                    <td class="p-4">
+                                        <p class="font-bold text-white text-sm"><%= bet.displayName %></p>
+                                    </td>
+                                    <td class="p-4 text-center text-gray-300 text-sm"><%= bet.teams %></td>
+                                    <td class="p-4 text-center">
+                                        <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-lg font-mono font-bold border border-blue-800">
+                                            <%= bet.prediction %>
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <form action="/admin/delete/<%= bet._id %>" method="POST" onsubmit="return confirm('Supprimer ce pari ?')">
+                                            <button class="text-red-400 hover:text-red-300 text-xs font-medium">Supprimer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-gray-500 italic">Aucun pari enregistré.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

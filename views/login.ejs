@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Paris Collègues</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 to-black min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/20">
+        <h1 class="text-3xl font-bold text-white text-center mb-8">🏆 Paris Entre Collègues</h1>
+        
+        <form action="/login" method="POST" class="space-y-4">
+            <h2 class="text-xl text-blue-300 font-semibold">Connexion</h2>
+            <input type="text" name="username" placeholder="Email" class="w-full p-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <input type="password" name="password" placeholder="Mot de passe" class="w-full p-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition duration-300">Se connecter</button>
+        </form>
+
+        <div class="relative my-8">
+            <div class="absolute inset-0 flex items-center"><span class="w-full border-t border-white/10"></span></div>
+            <div class="relative flex justify-center text-xs uppercase"><span class="bg-transparent px-2 text-gray-400">Ou créer un compte</span></div>
+        </div>
+
+        <form action="/register" method="POST" class="space-y-4">
+    <div class="flex gap-4">
+        <div class="flex-1">
+            <label class="block text-gray-400 text-xs mb-1 ml-2">Prénom</label>
+            <input type="text" name="firstName" placeholder="Jean" 
+                   class="w-full bg-gray-800 border border-gray-700 p-3 rounded-2xl text-white" required>
+        </div>
+        <div class="flex-1">
+            <label class="block text-gray-400 text-xs mb-1 ml-2">Nom</label>
+            <input type="text" name="lastName" placeholder="Bon" 
+                   class="w-full bg-gray-800 border border-gray-700 p-3 rounded-2xl text-white" required>
+        </div>
+    </div>
+
+    <div>
+        <label class="block text-gray-400 text-xs mb-1 ml-2">Email</label>
+        <input type="email" name="email" placeholder="votre@email.com" 
+               class="w-full bg-gray-800 border border-gray-700 p-3 rounded-2xl text-white" required>
+    </div>
+
+    <div>
+        <label class="block text-gray-400 text-xs mb-1 ml-2">Mot de passe</label>
+        <input type="password" name="password" placeholder="••••••••" 
+               class="w-full bg-gray-800 border border-gray-700 p-3 rounded-2xl text-white" required>
+    </div>
+
+    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all">
+        Créer mon compte
+    </button>
+</form>
+    </div>
+</body>
+</html>
