@@ -100,6 +100,15 @@ app.get('/', async (req, res) => {
     }
 });
 
+app.get('/faq', (req, res) => {
+    // On vérifie si l'utilisateur est connecté (sécurité)
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    // On affiche le fichier faq.ejs en lui passant l'utilisateur pour la navbar
+    res.render('faq', { user: req.session.user });
+});
+
 app.post('/bet', async (req, res) => {
     try {
         const { matchId, prediction, betId } = req.body; // Récupération possible d'un betId si modification

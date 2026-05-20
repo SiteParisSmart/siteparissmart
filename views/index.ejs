@@ -9,19 +9,24 @@
 <body class="bg-gray-900 text-white font-sans">
     
     <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50 p-4">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-2xl">⚽</span>
-                <h1 class="text-xl font-black italic text-blue-400 uppercase tracking-tighter">
-                    Smart-Rx <span class="text-white">Prono</span>
-                </h1>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="text-sm hidden md:block text-gray-400">Salut, <strong class="text-white"><%= user.firstName %></strong></span>
-                <a href="/logout" class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-lg font-bold transition-colors">Déconnexion</a>
-            </div>
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">⚽</span>
+            <h1 class="text-xl font-black italic text-blue-400 uppercase tracking-tighter">
+                Smart-Rx <span class="text-white">Prono</span>
+            </h1>
         </div>
-    </nav>
+        <div class="flex items-center gap-3">
+            <span class="text-sm hidden md:block text-gray-400">Salut, <strong class="text-white"><%= user.firstName %></strong></span>
+            
+            <a href="/faq" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-bold transition-colors">
+                ❓ FAQ
+            </a>
+            
+            <a href="/logout" class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-lg font-bold transition-colors">Déconnexion</a>
+        </div>
+    </div>
+</nav>
 
     <main class="max-w-4xl mx-auto p-6 space-y-10">
         
