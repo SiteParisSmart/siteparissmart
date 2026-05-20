@@ -109,8 +109,13 @@ app.post('/bet', async (req, res) => {
         if (!matchData) return res.status(404).send("Match non trouvé.");
 
         // SÉCURITÉ HEURE : Barrière de sécurité côté serveur
-		const maintenant = new Date();
+		const maintenantUTC = new Date();
+		const maintenantParis = new Date(maintenantUTC.getTime() + (2 * 60 * 60 * 1000));
 		const heureMatch = new Date(matchData.date);
+		
+		console.log("--- VERIFICATION FUSEAU ---");
+		console.log("Heure actuelle (Paris corrigée) :", maintenantParis.toLocaleString('fr-FR'))
+		console.log(Heure de début du match :", heureMatch.toLocaleString('fr-FR'));
 		
         if (maintenant.getTime() >= heureMatch.getTime()) {
             return res.status(403).send("Trop tard, le match a commencé !");
