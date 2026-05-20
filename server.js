@@ -115,7 +115,7 @@ app.post('/bet', async (req, res) => {
 		
 		console.log("--- VERIFICATION FUSEAU ---");
 		console.log("Heure actuelle (Paris corrigée) :", maintenantParis.toLocaleString('fr-FR'))
-		console.log(Heure de début du match :", heureMatch.toLocaleString('fr-FR'));
+		console.log("Heure de début du match :", heureMatch.toLocaleString('fr-FR'));
 		
         if (maintenant.getTime() >= heureMatch.getTime()) {
             return res.status(403).send("Trop tard, le match a commencé !");
