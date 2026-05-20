@@ -109,7 +109,10 @@ app.post('/bet', async (req, res) => {
         if (!matchData) return res.status(404).send("Match non trouvé.");
 
         // SÉCURITÉ HEURE : Barrière de sécurité côté serveur
-        if (new Date() >= new Date(matchData.date)) {
+		const maintenant = new Date();
+		const heureMatch = new Date(matchData.date);
+		
+        if (maintenant.getTime() >= heureMatch.getTime()) {
             return res.status(403).send("Trop tard, le match a commencé !");
         }
 
