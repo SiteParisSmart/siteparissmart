@@ -60,30 +60,29 @@
                 Ouvert
             </div>
 
-            <h3 class="text-xl font-bold mb-8 text-blue-400 italic uppercase italic">⚽ Parier sur un match</h3>
+            <h3 class="text-xl font-bold mb-8 text-blue-400 italic uppercase">⚽ Parier sur un match</h3>
             
             <form action="/bet" method="POST" id="betForm" class="space-y-6">
                 <div>
                     <label class="block text-[10px] uppercase text-gray-500 mb-2 font-black tracking-widest text-center">Choisir l'affiche :</label>
                     <select name="matchId" id="matchSelect" class="w-full bg-gray-900 border border-gray-700 p-4 rounded-xl font-semibold text-white outline-none focus:border-blue-500" required>
-    <option value="">-- Sélectionnez un match --</option>
-    <% matches.forEach(match => { 
-        // On vérifie si l'ID du match est dans le tableau des paris de l'utilisateur
-        const alreadyBetted = bettedMatchIds.includes(match._id.toString());
-    %>
-        <option value="<%= match._id %>" 
-        data-c1="<%= match.code1 %>" 
-        data-c2="<%= match.code2 %>"
-        data-deadline="<%= match.date.getTime() - (2 * 60 * 60 * 1000) %>" 
-        <%= alreadyBetted ? 'disabled class="text-gray-600"' : '' %>>
-		<%= match.teams %> 
-		<%= alreadyBetted ? '✅ (Déjà parié)' : '— ' + new Date(match.date.getTime()).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) %>
-</option>
-    <% }) %>
-</select>
-<p class="text-[10px] text-gray-500 mt-2 italic">
-    * Les matchs cochés ✅ sont déjà pariés. Pour les modifier, rendez-vous dans la section "Mes Pronos" en bas de page.
-</p>
+                        <option value="">-- Sélectionnez un match --</option>
+                        <% matches.forEach(match => { 
+                            const alreadyBetted = bettedMatchIds.includes(match._id.toString());
+                        %>
+                            <option value="<%= match._id %>" 
+                            data-c1="<%= match.code1 %>" 
+                            data-c2="<%= match.code2 %>"
+                            data-deadline="<%= match.date.getTime() - (2 * 60 * 60 * 1000) %>" 
+                            <%= alreadyBetted ? 'disabled class="text-gray-600"' : '' %>>
+                                <%= match.teams %> 
+                                <%= alreadyBetted ? '✅ (Déjà parié)' : '— ' + new Date(match.date.getTime()).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <p class="text-[10px] text-gray-500 mt-2 italic">
+                        * Les matchs cochés ✅ sont déjà pariés. Pour les modifier, rendez-vous dans la section "Mes Pronos" en bas de page.
+                    </p>
                 </div>
 
                 <div id="timerContainer" class="hidden bg-gray-900/50 border border-gray-700 p-4 rounded-2xl text-center">
@@ -123,12 +122,12 @@
             </form>
         </section>
 
-        <section>
+        <section class="bg-gray-800 p-6 rounded-3xl border border-gray-700 shadow-2xl">
             <h3 class="text-xl font-bold mb-6 px-2 text-blue-400 flex items-center gap-2 italic uppercase">📋 Mes Pronos</h3>
             <div class="grid gap-4">
                 <% const myBets = bets.filter(b => b.user === user.username);
                    myBets.forEach(bet => { %>
-                    <div class="bg-gray-800 p-5 rounded-3xl border border-gray-700 flex flex-col md:flex-row items-center gap-6 shadow-xl">
+                    <div class="bg-gray-900/50 p-5 rounded-3xl border border-gray-700 flex flex-col md:flex-row items-center gap-6 shadow-xl">
                         <div class="bg-gray-900 p-4 rounded-2xl w-20 h-20 flex flex-col items-center justify-center shrink-0 border border-gray-700">
                             <% let displayCode = (bet.prediction === '1') ? bet.code1 : (bet.prediction === '2' ? bet.code2 : null);
                                if(displayCode) { %>
@@ -148,9 +147,11 @@
         </section>
     </main>
 
-    <script>
+<script>
     let countdownInterval;
+    let isEditing = false; // Flag pour savoir si on est en mode édition
 
+    const betForm = document.getElementById('betForm');
     const matchSelect = document.getElementById('matchSelect');
     const img1 = document.getElementById('flag1');
     const img2 = document.getElementById('flag2');
@@ -173,11 +174,9 @@
             const c2 = opt.getAttribute('data-c2');
             const deadlineStr = opt.getAttribute('data-deadline');
 
-            // 1. Maj Drapeaux
             img1.src = c1 ? "https://flagcdn.com/w80/" + c1.toLowerCase() + ".png" : "https://flagcdn.com/w80/un.png";
             img2.src = c2 ? "https://flagcdn.com/w80/" + c2.toLowerCase() + ".png" : "https://flagcdn.com/w80/un.png";
 
-            // 2. Maj Chrono
             clearInterval(countdownInterval);
             if (!deadlineStr) {
                 timerContainer.classList.add('hidden');
@@ -185,15 +184,11 @@
             }
 
             timerContainer.classList.remove('hidden');
+            const deadline = Number(deadlineStr); 
 
-			// AVANT : const deadline = new Date(deadlineStr).getTime();
-			// MAINTENANT : On transforme directement la chaîne de chiffres en nombre
-			const deadline = Number(deadlineStr); 
-
-			countdownInterval = setInterval(() => {
-			// Le reste de ton setInterval actuel ne change pas du tout !
-			const now = new Date().getTime();
-			const diff = deadline - now;
+            countdownInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = deadline - now;
 
                 if (diff <= 0) {
                     clearInterval(countdownInterval);
@@ -215,7 +210,11 @@
                 
                 countdownEl.innerText = text;
                 submitBtn.disabled = false;
-                submitBtn.innerText = "Mettre à jour mon pari";
+                
+                // On préserve le texte si on est en train de modifier
+                if (!isEditing) {
+                    submitBtn.innerText = "Valider mon pari";
+                }
                 statusBadge.innerText = "Ouvert";
                 statusBadge.className = "absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-green-500/20 text-green-400 border border-green-500/50";
             }, 1000);
@@ -223,7 +222,7 @@
     }
 
     function editBet(betId, matchId, prediction, c1, c2) {
-        // SOLUTION : On cherche l'option désactivée et on la réactive pour permettre l'envoi du formulaire
+        isEditing = true;
         const optionToEnable = matchSelect.querySelector(`option[value="${matchId}"]`);
         if (optionToEnable) {
             optionToEnable.disabled = false;
@@ -242,14 +241,20 @@
             hiddenId.type = 'hidden';
             hiddenId.name = 'betId';
             hiddenId.id = 'editingBetId';
-            document.getElementById('betForm').appendChild(hiddenId);
+            betForm.appendChild(hiddenId);
         }
         hiddenId.value = betId;
         
-        // On change le texte du bouton pour plus de clarté
         submitBtn.innerText = "Confirmer la modification";
-        
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Interception de la soumission pour éviter les rechargements bruts et intercepter les erreurs serveurs
+    if (betForm) {
+        betForm.addEventListener('submit', function(e) {
+            // Optionnel : tu peux laisser le comportement par défaut si ta route /bet fait une redirection.
+            // Si le problème persiste, envoie-moi la route POST /bet de ton server.js !
+        });
     }
 </script>
 </body>
