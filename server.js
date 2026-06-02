@@ -156,18 +156,42 @@ app.post('/bet', async (req, res) => {
 
 // ... (le reste de tes routes login/register/admin/logout reste inchangé)
 
-app.get('/login', (req, res) => res.render('login'));
+app.get('/login', (req, res) => {
+    // On récupère le statut dans l'URL
+    const status = req.query.status;
+    
+    res.render('login', { 
+        accountCreated: status === 'registered',
+        emailExists: status === 'error_email_exists' // <-- On envoie l'info si l'email existe déjà
+    });
+});
 
 app.post('/register', async (req, res) => {
     try {
         const { email, firstName, lastName, password } = req.body;
+        const emailLower = email.toLowerCase();
+
+        // 1. VERIFICATION : Est-ce que l'email est déjà utilisé ?
+        const existingUser = await User.findOne({ username: emailLower });
+        if (existingUser) {
+            // Si oui, on redirige vers le login avec un paramètre d'erreur dans l'URL
+            return res.redirect('/login?status=error_email_exists');
+        }
+
+        // 2. CREATION : Si l'email est libre, on crée le compte
         const newUser = new User({ 
-            username: email.toLowerCase(), 
-            firstName, lastName, password 
+            username: emailLower, 
+            firstName, 
+            lastName, 
+            password 
         });
         await newUser.save();
-        res.redirect('/');
-    } catch (err) { res.status(500).send("Erreur inscription : " + err.message); }
+        
+        // Redirection succès
+        res.redirect('/login?status=registered');
+    } catch (err) { 
+        res.status(500).send("Erreur inscription : " + err.message); 
+    }
 });
 
 app.post('/login', async (req, res) => {
