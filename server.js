@@ -157,12 +157,12 @@ app.post('/bet', async (req, res) => {
 // ... (le reste de tes routes login/register/admin/logout reste inchangé)
 
 app.get('/login', (req, res) => {
-    // On récupère le statut dans l'URL
     const status = req.query.status;
     
     res.render('login', { 
         accountCreated: status === 'registered',
-        emailExists: status === 'error_email_exists' // <-- On envoie l'info si l'email existe déjà
+        emailExists: status === 'error_email_exists',
+        nameExists: status === 'error_name_exists' // <-- On envoie l'info du doublon de nom au fichier EJS
     });
 });
 
@@ -170,24 +170,37 @@ app.post('/register', async (req, res) => {
     try {
         const { email, firstName, lastName, password } = req.body;
         const emailLower = email.toLowerCase();
+        
+        // Nettoyage des espaces et uniformisation des retours (ex: "  jean " -> "Jean")
+        const fNameClean = firstName.trim();
+        const lNameClean = lastName.trim();
 
-        // 1. VERIFICATION : Est-ce que l'email est déjà utilisé ?
-        const existingUser = await User.findOne({ username: emailLower });
-        if (existingUser) {
-            // Si oui, on redirige vers le login avec un paramètre d'erreur dans l'URL
+        // 1. VERIFICATION 1 : Est-ce que l'email est déjà utilisé ?
+        const existingEmail = await User.findOne({ username: emailLower });
+        if (existingEmail) {
             return res.redirect('/login?status=error_email_exists');
         }
 
-        // 2. CREATION : Si l'email est libre, on crée le compte
+        // 2. VERIFICATION 2 : Est-ce qu'un joueur a déjà exactement ce prénom ET ce nom ?
+        // On utilise $regex avec l'option 'i' pour que ce soit insensible à la casse (ex: "Durand" bloquera "durand")
+        const existingName = await User.findOne({
+            firstName: { $regex: new RegExp(`^${fNameClean}$`, 'i') },
+            lastName: { $regex: new RegExp(`^${lNameClean}$`, 'i') }
+        });
+        
+        if (existingName) {
+            return res.redirect('/login?status=error_name_exists');
+        }
+
+        // 3. CREATION : Si tout est OK, on crée le compte
         const newUser = new User({ 
             username: emailLower, 
-            firstName, 
-            lastName, 
+            firstName: fNameClean, 
+            lastName: lNameClean, 
             password 
         });
         await newUser.save();
         
-        // Redirection succès
         res.redirect('/login?status=registered');
     } catch (err) { 
         res.status(500).send("Erreur inscription : " + err.message); 

@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paris Smart-RX - Mode Championnat</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 🎨 Stylisation de l'ascenseur personnalisé */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4); /* Bleu transparent */
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7); /* Bleu plus vif au survol */
+        }
+    </style>
 </head>
 <body class="text-white font-sans min-h-screen bg-cover bg-center bg-no-repeat bg-fixed" style="background-image: linear-gradient(to bottom, rgba(17, 24, 39, 0.85), rgba(17, 24, 39, 0.95)), url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1920');">
     
@@ -30,11 +48,14 @@
 
     <main class="max-w-4xl mx-auto p-6 space-y-10">
         
+        <!-- 🏆 SECTION CLASSEMENT GÉNÉRAL -->
         <section class="bg-gray-800 p-6 rounded-3xl border border-yellow-500/30 shadow-2xl">
             <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-3">
                 <span class="text-3xl text-yellow-400">🏆</span> CLASSEMENT GÉNÉRAL
             </h2>
-            <div class="space-y-3">
+            
+            <!-- 📦 Boîte de confinement de l'ascenseur (Bloqué à ~10 joueurs max, défilement fluide et marge à droite) -->
+            <div class="max-h-[510px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
                 <% leaderboard.forEach((player, index) => { %>
                     <div class="flex items-center justify-between p-4 rounded-2xl <%= player.email === user.username ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-900/50 border border-gray-700' %>">
                         <div class="flex items-center gap-4">
@@ -55,6 +76,7 @@
             </div>
         </section>
 
+        <!-- ⚽ SECTION DES PARIS -->
         <section class="bg-gray-800 p-8 rounded-3xl border border-gray-700 shadow-2xl relative">
             <div id="statusBadge" class="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-green-500/20 text-green-400 border border-green-500/50">
                 Ouvert
@@ -122,6 +144,7 @@
             </form>
         </section>
 
+        <!-- 📋 SECTION MES PRONOS -->
         <section class="bg-gray-800 p-6 rounded-3xl border border-gray-700 shadow-2xl">
             <h3 class="text-xl font-bold mb-6 px-2 text-blue-400 flex items-center gap-2 italic uppercase">📋 Mes Pronos</h3>
             <div class="grid gap-4">
@@ -149,7 +172,7 @@
 
 <script>
     let countdownInterval;
-    let isEditing = false; // Flag pour savoir si on est en mode édition
+    let isEditing = false;
 
     const betForm = document.getElementById('betForm');
     const matchSelect = document.getElementById('matchSelect');
@@ -211,7 +234,6 @@
                 countdownEl.innerText = text;
                 submitBtn.disabled = false;
                 
-                // On préserve le texte si on est en train de modifier
                 if (!isEditing) {
                     submitBtn.innerText = "Valider mon pari";
                 }
@@ -247,14 +269,6 @@
         
         submitBtn.innerText = "Confirmer la modification";
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Interception de la soumission pour éviter les rechargements bruts et intercepter les erreurs serveurs
-    if (betForm) {
-        betForm.addEventListener('submit', function(e) {
-            // Optionnel : tu peux laisser le comportement par défaut si ta route /bet fait une redirection.
-            // Si le problème persiste, envoie-moi la route POST /bet de ton server.js !
-        });
     }
 </script>
 </body>
