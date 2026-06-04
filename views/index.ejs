@@ -61,7 +61,15 @@
                         <div class="flex items-center gap-4">
                             <span class="text-xl font-black w-8 <%= index === 0 ? 'text-yellow-400' : 'text-gray-500' %>">#<%= index + 1 %></span>
                             <div>
-                                <p class="text-white font-bold"><%= player.name %></p>
+                                <p class="text-white font-bold flex items-center gap-2">
+    <% if (index === 0) { %>
+        <span>👑</span> <% } else if (index === 1) { %>
+        <span>🥈</span> <% } else if (index === 2) { %>
+        <span>🥉</span> <% } else if (index >= 3 && index <= 5) { %>
+        <span>🔥</span> <% } else { %>
+        <span>⚽</span> <% } %>
+    <%= player.name %>
+</p>
                                 <% if(player.email === user.username) { %>
                                     <span class="text-[10px] bg-yellow-500 text-black px-2 py-0.5 rounded-full font-black uppercase">Moi</span>
                                 <% } %>
