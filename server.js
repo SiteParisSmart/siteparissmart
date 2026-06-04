@@ -13,12 +13,13 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Connecté à MongoDB !"))
   .catch(err => console.error("❌ Erreur de connexion :", err));
 
-// 2. Modèles de données
+// 2. Modèles de données (CORRIGÉ : Ajout du champ badges)
 const User = mongoose.model('User', { 
     username: { type: String, unique: true, required: true }, 
     firstName: { type: String, required: true },
     lastName: { type: String, required: true }, 
-    password: { type: String, required: true } 
+    password: { type: String, required: true },
+    badges: { type: [String], default: [] } // Enregistre la collection permanente du joueur
 });
 
 const Bet = mongoose.model('Bet', {
@@ -28,7 +29,7 @@ const Bet = mongoose.model('Bet', {
     code1: String,
     code2: String,
     prediction: String,
-    datePari: Date // Ajouté pour le suivi
+    datePari: Date 
 });
 
 const Match = mongoose.model('Match', { 
@@ -64,11 +65,14 @@ app.get('/', async (req, res) => {
         const users = await User.find();
         const myBets = allBets.filter(b => b.user === req.session.user.username);
 
-        // --- CALCUL DU CLASSEMENT ---
+        // --- CALCUL DU CLASSEMENT & DES SÉRIES DE BADGES ---
         const leaderboard = users.map(u => {
             let points = 0;
+            
+            // Récupérer les paris de ce joueur spécifique
             const userBets = allBets.filter(b => b.user === u.username);
             
+            // 🔄 ÉTAPE A : Calcul des points accumulés
             userBets.forEach(bet => {
                 const match = matches.find(m => m._id.toString() === bet.matchId);
                 if (match && match.result && match.result === bet.prediction) {
@@ -76,64 +80,83 @@ app.get('/', async (req, res) => {
                 }
             });
 
+            // 🔄 ÉTAPE B : Calcul de la plus longue série de bons pronos (Badges)
+            // On trie les matchs par date pour suivre la chronologie réelle des résultats
+            const closedMatchesSorted = matches
+                .filter(m => m.result !== null)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            let currentStreak = 0;
+            let maxStreak = 0;
+
+            closedMatchesSorted.forEach(match => {
+                // On cherche si l'utilisateur a parié sur ce match clos
+                const bet = userBets.find(b => b.matchId === match._id.toString());
+                
+                if (bet) {
+                    if (bet.prediction === match.result) {
+                        currentStreak++; // Gagné ! La série augmente
+                        if (currentStreak > maxStreak) {
+                            maxStreak = currentStreak;
+                        }
+                    } else {
+                        currentStreak = 0; // Perdu ! La série en cours se brise
+                    }
+                }
+            });
+
+            // Attribution dynamique des badges selon la performance maximale enregistrée
+            let calculatedBadges = [];
+            if (maxStreak >= 3)  calculatedBadges.push('streak-3');
+            if (maxStreak >= 5)  calculatedBadges.push('streak-5');
+            if (maxStreak >= 10) calculatedBadges.push('streak-10');
+
             return {
                 name: `${u.firstName} ${u.lastName}`,
                 points: points,
-                email: u.username
+                email: u.username,
+                badges: calculatedBadges // Donné transmise à index.ejs
             };
         });
 
         leaderboard.sort((a, b) => b.points - a.points);
 
-        // CORRECTION : On s'assure d'envoyer les IDs sous forme de chaînes de caractères
         const bettedMatchIds = myBets.map(b => b.matchId.toString());
 
         res.render('index', { 
             user: req.session.user, 
             matches: matches, 
             bets: myBets,
-            bettedMatchIds: bettedMatchIds, // Utilisé pour griser les options dans index.ejs
+            bettedMatchIds: bettedMatchIds, 
             leaderboard: leaderboard
         });
     } catch (err) {
+        console.error(err);
         res.status(500).send("Erreur de chargement");
     }
 });
 
 app.get('/faq', (req, res) => {
-    // On vérifie si l'utilisateur est connecté (sécurité)
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    // On affiche le fichier faq.ejs en lui passant l'utilisateur pour la navbar
+    if (!req.session.user) return res.redirect('/login');
     res.render('faq', { user: req.session.user });
 });
 
 app.post('/bet', async (req, res) => {
     try {
-        const { matchId, prediction, betId } = req.body; // Récupération possible d'un betId si modification
+        const { matchId, prediction } = req.body; 
         const username = req.session.user.username;
 
         const matchData = await Match.findById(matchId);
         if (!matchData) return res.status(404).send("Match non trouvé.");
 
-        // SÉCURITÉ HEURE : Barrière de sécurité côté serveur
         const maintenantUTC = new Date();
         const maintenantParis = new Date(maintenantUTC.getTime() + (2 * 60 * 60 * 1000));
         const heureMatch = new Date(matchData.date);
         
-        console.log("--- VERIFICATION FUSEAU ---");
-        console.log("Heure actuelle (Paris corrigée) :", maintenantParis.toLocaleString('fr-FR'));
-        console.log("Heure de début du match :", heureMatch.toLocaleString('fr-FR'));
-        
-        // CORRECTION ICI : On utilise bien maintenantParis au lieu de maintenant
         if (maintenantParis.getTime() >= heureMatch.getTime()) {
             return res.status(403).send("Trop tard, le match a commencé !");
         }
 
-        // ANTI-DOUBLON : Utilisation de findOneAndUpdate avec upsert
-        // Si un pari existe pour cet utilisateur sur ce match, il est mis à jour.
-        // Sinon, il est créé.
         await Bet.findOneAndUpdate(
             { user: username, matchId: matchId }, 
             { 
@@ -154,15 +177,12 @@ app.post('/bet', async (req, res) => {
     }
 });
 
-// ... (le reste de tes routes login/register/admin/logout reste inchangé)
-
 app.get('/login', (req, res) => {
     const status = req.query.status;
-    
     res.render('login', { 
         accountCreated: status === 'registered',
         emailExists: status === 'error_email_exists',
-        nameExists: status === 'error_name_exists' // <-- On envoie l'info du doublon de nom au fichier EJS
+        nameExists: status === 'error_name_exists' 
     });
 });
 
@@ -171,18 +191,14 @@ app.post('/register', async (req, res) => {
         const { email, firstName, lastName, password } = req.body;
         const emailLower = email.toLowerCase();
         
-        // Nettoyage des espaces et uniformisation des retours (ex: "  jean " -> "Jean")
         const fNameClean = firstName.trim();
         const lNameClean = lastName.trim();
 
-        // 1. VERIFICATION 1 : Est-ce que l'email est déjà utilisé ?
         const existingEmail = await User.findOne({ username: emailLower });
         if (existingEmail) {
             return res.redirect('/login?status=error_email_exists');
         }
 
-        // 2. VERIFICATION 2 : Est-ce qu'un joueur a déjà exactement ce prénom ET ce nom ?
-        // On utilise $regex avec l'option 'i' pour que ce soit insensible à la casse (ex: "Durand" bloquera "durand")
         const existingName = await User.findOne({
             firstName: { $regex: new RegExp(`^${fNameClean}$`, 'i') },
             lastName: { $regex: new RegExp(`^${lNameClean}$`, 'i') }
@@ -192,12 +208,12 @@ app.post('/register', async (req, res) => {
             return res.redirect('/login?status=error_name_exists');
         }
 
-        // 3. CREATION : Si tout est OK, on crée le compte
         const newUser = new User({ 
             username: emailLower, 
             firstName: fNameClean, 
             lastName: lNameClean, 
-            password 
+            password,
+            badges: []
         });
         await newUser.save();
         
