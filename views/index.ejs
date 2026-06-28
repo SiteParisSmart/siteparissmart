@@ -59,15 +59,26 @@
                 <% leaderboard.forEach((player, index) => { 
                     // Sécurité pour s'assurer que player.badges est toujours un tableau
                     const playerBadges = player.badges || [];
+                    const hasDevinDivin = playerBadges.includes('streak-10');
+
+                    // Détermination du style de la ligne (Devin Divin > Moi > Standard)
+                    let cardClass = "bg-gray-900/50 border border-gray-700";
+                    if (hasDevinDivin) {
+                        cardClass = "bg-purple-950/40 border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-pulse-slow";
+                    } else if (player.email === user.username) {
+                        cardClass = "bg-yellow-500/20 border border-yellow-500/50";
+                    }
                 %>
-                    <div class="flex items-center justify-between p-4 rounded-2xl <%= player.email === user.username ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-900/50 border border-gray-700' %>">
+                    <div class="flex items-center justify-between p-4 rounded-2xl <%= cardClass %>">
                         <div class="flex items-center gap-4">
-                            <span class="text-xl font-black w-8 <%= index === 0 ? 'text-yellow-400' : 'text-gray-500' %>">#<%= index + 1 %></span>
+                            <span class="text-xl font-black w-8 <%= index === 0 ? 'text-yellow-400' : (hasDevinDivin ? 'text-purple-400' : 'text-gray-500') %>">#<%= index + 1 %></span>
                             <div>
-                                <!-- Ligne 1 : Émoji de position + Nom + Badge "Moi" -->
+                                <!-- Ligne 1 : Émoji de position + Nom + Badges de statut -->
                                 <div class="flex flex-wrap items-center gap-2">
                                     <p class="text-white font-bold flex items-center gap-2">
-                                        <% if (index === 0) { %>
+                                        <% if (hasDevinDivin) { %>
+                                            <span>🔮</span>
+                                        <% } else if (index === 0) { %>
                                             <span>👑</span> 
                                         <% } else if (index === 1) { %>
                                             <span>🥈</span> 
@@ -84,9 +95,13 @@
                                     <% if(player.email === user.username) { %>
                                         <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Moi</span>
                                     <% } %>
+
+                                    <% if(hasDevinDivin) { %>
+                                        <span class="text-[9px] bg-purple-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider shadow-sm">Légende</span>
+                                    <% } %>
                                 </div>
 
-                                <!-- Ligne 2 : 🎖️ VITRINE DES SUCCÈS (Effet débloqué / silhouette effacée) -->
+                                <!-- Ligne 2 : 🎖️ VITRINE DES SUCCÈS -->
                                 <div class="flex flex-wrap gap-1.5 mt-2 pt-1.5 border-t border-white/5">
                                     
                                     <!-- 🔥 Succès : 3 bons paris d'affilée -->
@@ -112,8 +127,8 @@
                                     <% } %>
 
                                     <!-- 🔮 Succès : 10 bons paris d'affilée -->
-                                    <% if (playerBadges.includes('streak-10')) { %>
-                                        <span title="LÉGENDAIRE : 10 bons paris consécutifs d'affilée !" class="cursor-help text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/40 px-2 py-0.5 rounded-md font-black flex items-center gap-1 shadow-[0_0_8px_rgba(168,85,247,0.4)] tracking-wide">
+                                    <% if (hasDevinDivin) { %>
+                                        <span title="LÉGENDAIRE : 10 bons paris consécutifs d'affilée !" class="cursor-help text-[9px] bg-purple-500 text-white border border-purple-400 px-2 py-0.5 rounded-md font-black flex items-center gap-1 shadow-[0_0_8px_rgba(168,85,247,0.6)] tracking-wide">
                                             🔮 Devin Divin
                                         </span>
                                     <% } else { %>
@@ -126,7 +141,7 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <span class="text-2xl font-black"><%= player.points %></span>
+                            <span class="text-2xl font-black <%= hasDevinDivin ? 'text-purple-300' : '' %>"><%= player.points %></span>
                             <span class="text-xs text-gray-400 uppercase ml-1">pts</span>
                         </div>
                     </div>
@@ -170,7 +185,6 @@
                     <div id="countdown" class="text-2xl font-black text-yellow-400 font-mono">--:--:--</div>
                 </div>
 
-                <!-- Modifié : Grid passée de 3 colonnes à 2 colonnes sans l'option match nul -->
                 <div class="grid grid-cols-2 gap-4">
                     <label class="cursor-pointer group">
                         <input type="radio" name="prediction" value="1" class="hidden peer" required>
