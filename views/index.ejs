@@ -170,20 +170,13 @@
                     <div id="countdown" class="text-2xl font-black text-yellow-400 font-mono">--:--:--</div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4">
+                <!-- Modifié : Grid passée de 3 colonnes à 2 colonnes sans l'option match nul -->
+                <div class="grid grid-cols-2 gap-4">
                     <label class="cursor-pointer group">
                         <input type="radio" name="prediction" value="1" class="hidden peer" required>
                         <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
                             <img id="flag1" src="https://flagcdn.com/w80/un.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
                             <span class="text-xs font-bold text-gray-400 peer-checked:text-white">1</span>
-                        </div>
-                    </label>
-
-                    <label class="cursor-pointer group">
-                        <input type="radio" name="prediction" value="N" class="hidden peer">
-                        <div class="peer-checked:bg-gray-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center justify-center">
-                            <span class="text-2xl mb-1">🤝</span>
-                            <span class="text-xs font-bold text-gray-400 peer-checked:text-white">NUL</span>
                         </div>
                     </label>
 
