@@ -229,16 +229,21 @@
             const team1Name = opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1';
             const team2Name = opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2';
 
-            // 📢 Affichage des règles
+            // 📢 Affichage des règles adaptées à la phase
             pointsRuleBadge.classList.remove('hidden');
-            pointsRuleBadge.innerText = "💡 RÈGLE : Vainqueur qualifié trouvé = 3 pts | Score exact (Fin du temps réglementaire) = +3 pts bonus !";
-            pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-blue-950/40 border-blue-500/40 text-blue-300";
+            if (phase === 'seizieme') {
+                pointsRuleBadge.innerText = "💡 RÈGLE : Vainqueur qualifié trouvé = 3 pts !";
+                pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-green-950/40 border-green-500/40 text-green-300";
+            } else {
+                pointsRuleBadge.innerText = "💡 RÈGLE : Vainqueur qualifié trouvé = 3 pts | Score exact (Fin du temps réglementaire) = +3 pts bonus !";
+                pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-blue-950/40 border-blue-500/40 text-blue-300";
+            }
 
-            // Interface unifiée : Ligne 1 (Drapeaux Vainqueur Final) + Ligne 2 (Score exact fin 90min)
-            dynamicContainer.innerHTML = `
+            // Génération de la ligne 1 (Sélection vainqueur) - Valable pour tout le monde
+            let innerHTMLContent = `
                 <div class="bg-gray-900/40 p-6 rounded-3xl border border-gray-700/50 space-y-8">
                     
-                    <!-- 🚩 LIGNE 1 : SÉLECTION DE L'ÉQUIPE QUALIFIÉE (PAS DE NUL) -->
+                    <!-- 🚩 LIGNE 1 : SÉLECTION DE L'ÉQUIPE QUALIFIÉE -->
                     <div>
                         <p class="text-[10px] uppercase text-yellow-400 font-black tracking-widest text-center mb-4">1. Qui va se qualifier au final ?</p>
                         <div class="grid grid-cols-2 gap-6 max-w-md mx-auto">
@@ -258,9 +263,11 @@
                                 </div>
                             </label>
                         </div>
-                    </div>
+                    </div>`;
 
-                    <!-- 🔢 LIGNE 2 : SAISIE DU SCORE EXACT (AU BOUT DES 90 MIN) -->
+            // 🔢 LIGNE 2 : SAISIE DU SCORE EXACT (Masquée complètement si phase === 'seizieme')
+            if (phase !== 'seizieme') {
+                innerHTMLContent += `
                     <div class="border-t border-gray-700/40 pt-6">
                         <p class="text-[10px] uppercase text-gray-400 font-black tracking-widest text-center mb-4">2. Tentez le score exact à la fin du temps réglementaire (90 min) :</p>
                         <div class="flex items-center justify-center gap-6">
@@ -274,8 +281,11 @@
                                 <input type="number" name="score2" id="score2Input" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
                             </div>
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
+            }
+
+            innerHTMLContent += `</div>`;
+            dynamicContainer.innerHTML = innerHTMLContent;
 
             // Gestion du décompte horaire
             clearInterval(countdownInterval);
@@ -336,7 +346,7 @@
                 if (radioPred) radioPred.checked = true;
             }
 
-            // Remplit les scores exacts
+            // Remplit les scores exacts s'ils existent (ils ne chargeront pas pour les 16e puisque l'élément n'existe pas)
             const inputScore1 = document.getElementById('score1Input');
             const inputScore2 = document.getElementById('score2Input');
             if (inputScore1) inputScore1.value = score1;
