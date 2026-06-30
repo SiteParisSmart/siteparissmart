@@ -66,7 +66,7 @@ app.get('/', async (req, res) => {
     
     try {
         // Optionnel : On trie les matchs par ordre chronologique pour le confort des joueurs
-        const matches = await Match.find().sort({ date: 1 });
+        const matches = await Match.find().sort({ date: -1 });
         const allBets = await Bet.find();
         const users = await User.find();
         const myBets = allBets.filter(b => b.user === req.session.user.username);
