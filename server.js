@@ -65,7 +65,8 @@ app.get('/', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     
     try {
-        const matches = await Match.find();
+        // Optionnel : On trie les matchs par ordre chronologique pour le confort des joueurs
+        const matches = await Match.find().sort({ date: 1 });
         const allBets = await Bet.find();
         const users = await User.find();
         const myBets = allBets.filter(b => b.user === req.session.user.username);
@@ -284,7 +285,9 @@ app.get('/admin/:password', async (req, res) => {
     if (req.params.password !== secret) return res.status(403).send("Accès refusé.");
 
     try {
-        const allBets = await Bet.find().lean();
+        // MODIFICATION ICI : On applique le tri décroissant sur l'identifiant unique MongoDB (_id)
+        // Les documents MongoDB contenant nativement leur date de création dans l'ID, -1 affiche le plus récent en premier.
+        const allBets = await Bet.find().sort({ _id: -1 }).lean();
         const allMatches = await Match.find();
         const allUsers = await User.find();
 
