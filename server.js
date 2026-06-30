@@ -13,7 +13,7 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Connecté à MongoDB !"))
   .catch(err => console.error("❌ Erreur de connexion :", err));
 
-// 2. Modèles de données (CORRIGÉ : Support des scores, des phases de match et qualifications)
+// 2. Modèles de données
 const User = mongoose.model('User', { 
     username: { type: String, unique: true, required: true }, 
     firstName: { type: String, required: true },
@@ -28,7 +28,7 @@ const Bet = mongoose.model('Bet', {
     teams: String,
     code1: String,
     code2: String,
-    prediction: String, // Contient '1' ou '2' (L'équipe qualifiée en phase finale, ou le prono en 16e)
+    prediction: String, // Contient '1' ou '2' (L'équipe qualifiée choisie)
     score1: { type: Number, default: null }, // Score pronostiqué Équipe 1 au bout des 90 min
     score2: { type: Number, default: null }, // Score pronostiqué Équipe 2 au bout des 90 min
     datePari: Date 
@@ -40,9 +40,9 @@ const Match = mongoose.model('Match', {
     code2: String, 
     date: Date,
     phase: { type: String, default: 'seizieme' }, // 'seizieme', 'huitieme', 'quart', 'demie', 'finale'
-    result: { type: String, default: null }, // Contient '1' ou '2' (L'équipe qui s'est qualifiée / a gagné au final)
-    score1: { type: Number, default: null }, // Score réel final Équipe 1 au bout des 90 min
-    score2: { type: Number, default: null }, // Score réel final Équipe 2 au bout des 90 min
+    result: { type: String, default: null }, // Contient '1' ou '2' (L'équipe réellement qualifiée)
+    score1: { type: Number, default: null }, // Score réel Équipe 1 au bout des 90 min
+    score2: { type: Number, default: null }, // Score réel Équipe 2 au bout des 90 min
     status: { type: String, default: 'open' } 
 });
 
@@ -77,25 +77,25 @@ app.get('/', async (req, res) => {
             // Récupérer les paris de ce joueur spécifique
             const userBets = allBets.filter(b => b.user === u.username);
             
-            // 🔄 ÉTAPE A : Calcul des points accumulés dynamique selon la règle de phase
+            // 🔄 ÉTAPE A : Calcul des points accumulés (3 pts Pays + 3 pts Score exact 90 min)
             userBets.forEach(bet => {
                 const match = matches.find(m => m._id.toString() === bet.matchId);
                 if (match && match.result) {
                     const isKnockout = ['huitieme', 'quart', 'demie', 'finale'].includes(match.phase);
 
                     if (!isKnockout) {
-                        // 16èmes de finale : Règle classique de base (Victoire simple = 3 points)
+                        // Poules / 16èmes : Règle classique
                         if (match.result === bet.prediction) {
                             points += 3;
                         }
                     } else {
-                        // À partir des 8èmes de finale : Barème évolué cumulable
-                        // Règle 1 : Trouve l'équipe qualifiée (prediction stocke '1' ou '2') -> +3 pts
+                        // À partir des 8èmes : Cumul précis
+                        // Règle 1 : L'équipe qualifiée trouvée ('1' ou '2') -> +3 pts
                         if (bet.prediction === match.result) {
                             points += 3;
                         }
                         
-                        // Règle 2 : Trouve le score exact au bout des 90 minutes -> +3 pts supplémentaires
+                        // Règle 2 : Le score exact à la fin du temps réglementaire (90 min) -> +3 pts bonus
                         if (bet.score1 === match.score1 && bet.score2 === match.score2) {
                             points += 3;
                         }
@@ -115,7 +115,6 @@ app.get('/', async (req, res) => {
                 const bet = userBets.find(b => b.matchId === match._id.toString());
                 
                 if (bet) {
-                    // Pour la série de badges, on valide si le joueur a trouvé l'issue finale (le qualifié / vainqueur)
                     if (bet.prediction === match.result) {
                         currentStreak++; 
                         if (currentStreak > maxStreak) {
@@ -163,7 +162,7 @@ app.get('/faq', (req, res) => {
 
 app.post('/bet', async (req, res) => {
     try {
-        const { matchId, prediction, score1, score2, qualifiedWinner, betId } = req.body; 
+        const { matchId, prediction, score1, score2, betId } = req.body; 
         const username = req.session.user.username;
 
         const matchData = await Match.findById(matchId);
@@ -187,16 +186,11 @@ app.post('/bet', async (req, res) => {
         };
 
         if (isKnockout) {
+            // Ligne 1 : Equipe qualifiée sélectionnée ('1' ou '2')
+            updateData.prediction = prediction; 
+            // Ligne 2 : Saisie du score réglementaire (90 min)
             updateData.score1 = parseInt(score1);
             updateData.score2 = parseInt(score2);
-            
-            // Si égalité au bout des 90min, on prend la valeur du bouton radio 'qualifiedWinner' ('1' ou '2')
-            if (updateData.score1 === updateData.score2) {
-                updateData.prediction = qualifiedWinner; 
-            } else {
-                // Sinon, le vainqueur se déduit directement des buts
-                updateData.prediction = updateData.score1 > updateData.score2 ? '1' : '2';
-            }
         } else {
             updateData.prediction = prediction;
             updateData.score1 = null;
@@ -326,31 +320,25 @@ app.post('/admin/match', async (req, res) => {
     res.redirect('back');
 });
 
-// Gestion de la clôture par score exact et qualification finale
+// Gestion de la clôture par l'admin (Sauvegarde du score 90min ET du qualifié)
 app.post('/admin/match/result', async (req, res) => {
     try {
         const { matchId, result, score1, score2 } = req.body;
         
-        let updateFields = { result: result };
+        let updateFields = { result: result }; // Enregistre l'équipe qualifiée ('1' ou '2') sélectionnée par l'admin
         
-        // Si l'admin soumet via le formulaire à score (Phases finales)
         if (score1 !== undefined && score2 !== undefined && score1 !== "" && score2 !== "") {
+            // Enregistre de façon brute le score exact à la fin des 90 minutes (ex: 1-1, 2-2 ou autre)
             updateFields.score1 = parseInt(score1);
             updateFields.score2 = parseInt(score2);
-            
-            if (updateFields.score1 === updateFields.score2) {
-                // S'il y a égalité à la fin des 90 minutes (ex: 1-1), l'administration devra 
-                // idéalement envoyer l'équipe qualifiée ('1' ou '2') via un traitement ou un ajustement.
-                // Par défaut, si non précisé par l'interface admin modifiée, on garde la valeur transmise.
-                updateFields.result = result; 
-            } else {
-                updateFields.result = updateFields.score1 > updateFields.score2 ? '1' : '2';
-            }
         }
 
         await Match.findByIdAndUpdate(matchId, updateFields);
         res.redirect('back');
-    } catch (err) { res.status(500).send("Erreur résultat"); }
+    } catch (err) { 
+        console.error(err);
+        res.status(500).send("Erreur résultat"); 
+    }
 });
 
 app.post('/admin/match/delete', async (req, res) => {

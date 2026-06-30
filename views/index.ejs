@@ -170,15 +170,8 @@
                         <div class="bg-gray-900 p-4 rounded-2xl w-20 h-20 flex flex-col items-center justify-center shrink-0 border border-gray-700">
                             <% 
                             let displayCode = null;
-                            if (bet.score1 !== null && bet.score2 !== null) {
-                                // En phase finale, on montre le drapeau de l'équipe qualifiée choisie (prediction)
-                                if (bet.prediction === '1') displayCode = bet.code1;
-                                else if (bet.prediction === '2') displayCode = bet.code2;
-                            } else {
-                                // Règle classique des poules / 16èmes
-                                if (bet.prediction === '1') displayCode = bet.code1;
-                                else if (bet.prediction === '2') displayCode = bet.code2;
-                            }
+                            if (bet.prediction === '1') displayCode = bet.code1;
+                            else if (bet.prediction === '2') displayCode = bet.code2;
                             
                             if(displayCode) { %>
                                 <img src="https://flagcdn.com/w80/<%= displayCode.toLowerCase() %>.png" class="w-12 rounded shadow-sm">
@@ -189,20 +182,16 @@
                         <div class="flex-1 text-center md:text-left">
                             <p class="text-xl font-black text-white"><%= bet.teams %></p>
                             <p class="text-xs font-bold text-blue-400 uppercase">
-                                Pari : 
+                                Mon prono : 
                                 <span class="text-white">
+                                    Qualifié : <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : bet.teams.split(' - ')[1] %>
                                     <% if (bet.score1 !== null && bet.score2 !== null) { %>
-                                        Score : <%= bet.score1 %> - <%= bet.score2 %> 
-                                        <% if (bet.score1 === bet.score2) { %>
-                                            (Qualifié : <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : bet.teams.split(' - ')[1] %>)
-                                        <% } %>
-                                    <% } else { %>
-                                        <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : (bet.prediction === '2' ? bet.teams.split(' - ')[1] : 'Match Nul') %>
+                                        (Score 90 min : <%= bet.score1 %> - <%= bet.score2 %>)
                                     <% } %>
                                 </span>
                             </p>
                         </div>
-                        <button onclick="editBet('<%= bet._id %>', '<%= bet.matchId %>', '<%= bet.prediction || '' %>', '<%= bet.score1 !== null ? bet.score1 : '' %>', '<%= bet.score2 !== null ? bet.score2 : '' %>', '<%= bet.code1 %>', '<%= bet.code2 %>')" class="bg-gray-700 hover:bg-white hover:text-black text-gray-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Modifier</button>
+                        <button onclick="editBet('<%= bet._id %>', '<%= bet.matchId %>', '<%= bet.prediction || '' %>', '<%= bet.score1 !== null ? bet.score1 : '' %>', '<%= bet.score2 !== null ? bet.score2 : '' %>')" class="bg-gray-700 hover:bg-white hover:text-black text-gray-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Modifier</button>
                     </div>
                 <% }) %>
             </div>
@@ -237,100 +226,58 @@
             const phase = opt.getAttribute('data-phase');
             const deadlineStr = opt.getAttribute('data-deadline');
 
-            // 📢 Affichage de la bulle d'information sur les points selon la phase
+            const team1Name = opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1';
+            const team2Name = opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2';
+
+            // 📢 Affichage des règles
             pointsRuleBadge.classList.remove('hidden');
-            if (phase === 'huitieme' || phase === 'quart' || phase === 'demie' || phase === 'finale') {
-                pointsRuleBadge.innerText = "💡 RÈGLE : Qualifié trouvé = 3 pts | Score exact (Fin du tps réglementaire) = +3 pts bonus !";
-                pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-blue-950/40 border-blue-500/40 text-blue-300";
-                
-                // Formulaire Score Exact + Bloc qualification si nul
-                dynamicContainer.innerHTML = `
-                    <div class="bg-gray-900/40 p-6 rounded-2xl border border-gray-700/50 space-y-6">
-                        <div class="grid grid-cols-2 gap-8">
-                            <div class="flex flex-col items-center space-y-3">
-                                <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
-                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1'}</label>
+            pointsRuleBadge.innerText = "💡 RÈGLE : Vainqueur qualifié trouvé = 3 pts | Score exact (Fin du temps réglementaire) = +3 pts bonus !";
+            pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-blue-950/40 border-blue-500/40 text-blue-300";
+
+            // Interface unifiée : Ligne 1 (Drapeaux Vainqueur Final) + Ligne 2 (Score exact fin 90min)
+            dynamicContainer.innerHTML = `
+                <div class="bg-gray-900/40 p-6 rounded-3xl border border-gray-700/50 space-y-8">
+                    
+                    <!-- 🚩 LIGNE 1 : SÉLECTION DE L'ÉQUIPE QUALIFIÉE (PAS DE NUL) -->
+                    <div>
+                        <p class="text-[10px] uppercase text-yellow-400 font-black tracking-widest text-center mb-4">1. Qui va se qualifier au final ?</p>
+                        <div class="grid grid-cols-2 gap-6 max-w-md mx-auto">
+                            <label class="cursor-pointer group">
+                                <input type="radio" name="prediction" value="1" id="pred1" class="hidden peer" required>
+                                <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center justify-center min-h-[110px] shadow-lg">
+                                    <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-16 h-10 object-cover mb-2 rounded shadow-md border border-gray-700">
+                                    <span class="text-[11px] font-black uppercase text-gray-400 peer-checked:text-white line-clamp-1">${team1Name}</span>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer group">
+                                <input type="radio" name="prediction" value="2" id="pred2" class="hidden peer">
+                                <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center justify-center min-h-[110px] shadow-lg">
+                                    <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-16 h-10 object-cover mb-2 rounded shadow-md border border-gray-700">
+                                    <span class="text-[11px] font-black uppercase text-gray-400 peer-checked:text-white line-clamp-1">${team2Name}</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 🔢 LIGNE 2 : SAISIE DU SCORE EXACT (AU BOUT DES 90 MIN) -->
+                    <div class="border-t border-gray-700/40 pt-6">
+                        <p class="text-[10px] uppercase text-gray-400 font-black tracking-widest text-center mb-4">2. Tentez le score exact à la fin du temps réglementaire (90 min) :</p>
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="flex flex-col items-center">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase mb-1">${team1Name}</span>
                                 <input type="number" name="score1" id="score1Input" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
                             </div>
-                            <div class="flex flex-col items-center space-y-3">
-                                <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
-                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2'}</label>
+                            <span class="text-xl font-black text-gray-600 mt-4">-</span>
+                            <div class="flex flex-col items-center">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase mb-1">${team2Name}</span>
                                 <input type="number" name="score2" id="score2Input" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
                             </div>
                         </div>
+                    </div>
+                </div>`;
 
-                        <!-- 🤝 SECTION SÉCURITÉ MATCH NUL (PROLONGATIONS / TAB) -->
-                        <div id="qualificationBlock" class="hidden border-t border-gray-700/50 pt-4 text-center space-y-3">
-                            <p class="text-xs font-bold text-yellow-400 uppercase">En cas de match nul, qui se qualifie au bout du suspense ?</p>
-                            <div class="flex justify-center gap-4">
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="qualifiedWinner" value="1" id="qualify1" class="peer hidden">
-                                    <div class="peer-checked:bg-blue-600 peer-checked:text-white bg-gray-800 border border-gray-700 px-4 py-2 rounded-xl text-xs font-bold text-gray-400 transition-all">
-                                        ${opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1'}
-                                    </div>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="qualifiedWinner" value="2" id="qualify2" class="peer hidden">
-                                    <div class="peer-checked:bg-blue-600 peer-checked:text-white bg-gray-800 border border-gray-700 px-4 py-2 rounded-xl text-xs font-bold text-gray-400 transition-all">
-                                        ${opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2'}
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>`;
-
-                const s1 = document.getElementById('score1Input');
-                const s2 = document.getElementById('score2Input');
-                const qBlock = document.getElementById('qualificationBlock');
-                const q1 = document.getElementById('qualify1');
-                const q2 = document.getElementById('qualify2');
-
-                function checkEquality() {
-                    if(s1.value !== "" && s2.value !== "" && parseInt(s1.value) === parseInt(s2.value)) {
-                        qBlock.classList.remove('hidden');
-                        q1.required = true;
-                    } else {
-                        qBlock.classList.add('hidden');
-                        q1.required = false;
-                        q1.checked = false;
-                        q2.checked = false;
-                    }
-                }
-                s1.addEventListener('input', checkEquality);
-                s2.addEventListener('input', checkEquality);
-
-            } else {
-                pointsRuleBadge.innerText = "💡 RÈGLE : Victoire simple = 3 points. Match nul possible à la fin des 90 minutes.";
-                pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-gray-900/50 border-gray-700 text-gray-400";
-                
-                // Formulaire 1, N ou 2 classique des poules/16èmes
-                dynamicContainer.innerHTML = `
-                    <div class="grid grid-cols-3 gap-4">
-                        <label class="cursor-pointer group">
-                            <input type="radio" name="prediction" value="1" class="hidden peer" required>
-                            <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
-                                <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
-                                <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Victoire Domicile</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer group">
-                            <input type="radio" name="prediction" value="N" class="hidden peer">
-                            <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center justify-center h-full">
-                                <span class="text-2xl mb-1">🤝</span>
-                                <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Match Nul</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer group">
-                            <input type="radio" name="prediction" value="2" class="hidden peer">
-                            <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
-                                <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
-                                <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Victoire Extérieur</span>
-                            </div>
-                        </label>
-                    </div>`;
-            }
-
-            // Gestion du Timer / Décompte
+            // Gestion du décompte horaire
             clearInterval(countdownInterval);
             if (!deadlineStr) {
                 timerContainer.classList.add('hidden');
@@ -371,7 +318,7 @@
         });
     }
 
-    function editBet(betId, matchId, prediction, score1, score2, c1, c2) {
+    function editBet(betId, matchId, prediction, score1, score2) {
         isEditing = true;
         const optionToEnable = matchSelect.querySelector(`option[value="${matchId}"]`);
         if (optionToEnable) {
@@ -383,28 +330,18 @@
         matchSelect.dispatchEvent(new Event('change'));
         
         setTimeout(() => {
-            if (score1 !== '' && score2 !== '') {
-                const inputScore1 = document.getElementById('score1Input');
-                const inputScore2 = document.getElementById('score2Input');
-                if (inputScore1) {
-                    inputScore1.value = score1;
-                    inputScore1.dispatchEvent(new Event('input')); // Force l'apparition du bloc de qualif si égalité
-                }
-                if (inputScore2) {
-                    inputScore2.value = score2;
-                    inputScore2.dispatchEvent(new Event('input'));
-                }
-                
-                // Si égalité, on coche la bonne radio de qualification
-                if (parseInt(score1) === parseInt(score2) && prediction !== '') {
-                    const qualifRadio = document.querySelector(`input[name="qualifiedWinner"][value="${prediction}"]`);
-                    if (qualifRadio) qualifRadio.checked = true;
-                }
-            } else if (prediction !== '') {
-                const radio = document.querySelector(`input[name="prediction"][value="${prediction}"]`);
-                if (radio) radio.checked = true;
+            // Coche le drapeau de l'équipe sélectionnée (prediction: "1" ou "2")
+            if (prediction !== '') {
+                const radioPred = document.querySelector(`input[name="prediction"][value="${prediction}"]`);
+                if (radioPred) radioPred.checked = true;
             }
-        }, 100);
+
+            // Remplit les scores exacts
+            const inputScore1 = document.getElementById('score1Input');
+            const inputScore2 = document.getElementById('score2Input');
+            if (inputScore1) inputScore1.value = score1;
+            if (inputScore2) inputScore2.value = score2;
+        }, 150);
 
         let hiddenId = document.getElementById('editingBetId');
         if (!hiddenId) {

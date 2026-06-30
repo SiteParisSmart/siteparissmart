@@ -79,12 +79,27 @@
                                             <button name="result" value="2" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">2</button>
                                         </form>
                                     <% } else { %>
-                                        <form action="/admin/match/result" method="POST" class="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-xl border border-gray-700">
+                                        <form action="/admin/match/result" method="POST" class="flex flex-col gap-3 bg-black/40 p-4 rounded-xl border border-gray-700">
                                             <input type="hidden" name="matchId" value="<%= match._id %>">
-                                            <input type="number" name="score1" min="0" placeholder="0" class="w-12 bg-gray-900 text-center font-black p-1 rounded border border-gray-700 text-blue-400" required>
-                                            <span class="text-gray-500 font-bold">-</span>
-                                            <input type="number" name="score2" min="0" placeholder="0" class="w-12 bg-gray-900 text-center font-black p-1 rounded border border-gray-700 text-blue-400" required>
-                                            <button type="submit" class="bg-green-600 hover:bg-green-500 text-xs px-2 py-1.5 rounded font-bold uppercase tracking-wider ml-1">OK</button>
+                                            
+                                            <div class="flex items-center justify-center gap-4 border-b border-gray-700 pb-2">
+                                                <span class="text-[10px] text-yellow-400 font-bold uppercase tracking-wider">Qualifié :</span>
+                                                <label class="cursor-pointer flex items-center gap-1.5 bg-gray-900 px-2 py-1 rounded border border-gray-700 has-[:checked]:bg-blue-600 has-[:checked]:border-transparent">
+                                                    <input type="radio" name="result" value="1" class="accent-white" required>
+                                                    <img src="https://flagcdn.com/w40/<%= match.code1.toLowerCase() %>.png" class="w-5 rounded-xs">
+                                                </label>
+                                                <label class="cursor-pointer flex items-center gap-1.5 bg-gray-900 px-2 py-1 rounded border border-gray-700 has-[:checked]:bg-blue-600 has-[:checked]:border-transparent">
+                                                    <input type="radio" name="result" value="2" class="accent-white">
+                                                    <img src="https://flagcdn.com/w40/<%= match.code2.toLowerCase() %>.png" class="w-5 rounded-xs">
+                                                </label>
+                                            </div>
+
+                                            <div class="flex items-center justify-center gap-2">
+                                                <input type="number" name="score1" min="0" placeholder="0" class="w-12 bg-gray-900 text-center font-black p-1 rounded border border-gray-700 text-blue-400" required>
+                                                <span class="text-gray-500 font-bold">-</span>
+                                                <input type="number" name="score2" min="0" placeholder="0" class="w-12 bg-gray-900 text-center font-black p-1 rounded border border-gray-700 text-blue-400" required>
+                                                <button type="submit" class="bg-green-600 hover:bg-green-500 text-xs px-3 py-1.5 rounded font-bold uppercase tracking-wider ml-2">Valider</button>
+                                            </div>
                                         </form>
                                     <% } %>
 
@@ -92,7 +107,7 @@
                                     <div class="flex items-center gap-2">
                                         <span class="bg-green-900/30 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-800">
                                             <% if (match.score1 !== null && match.score2 !== null) { %>
-                                                SCORE : <%= match.score1 %> - <%= match.score2 %> (<%= match.result %>)
+                                                SCORE 90M : <%= match.score1 %> - <%= match.score2 %> | QUALIFIÉ : <%= match.result === '1' ? match.teams.split(' - ')[0] : match.teams.split(' - ')[1] %>
                                             <% } else { %>
                                                 RÉSULTAT : <%= match.result %>
                                             <% } %>
@@ -102,7 +117,7 @@
                                             <input type="hidden" name="result" value="">
                                             <input type="hidden" name="score1" value="">
                                             <input type="hidden" name="score2" value="">
-                                            <button type="submit" class="text-gray-500 hover:text-white text-xs underline">Modifier</button>
+                                            <button type="submit" class="text-gray-500 hover:text-white text-xs underline ml-1">Modifier</button>
                                         </form>
                                     </div>
                                 <% } %>
@@ -132,7 +147,7 @@
                         <tr>
                             <th class="p-4">Joueur</th>
                             <th class="p-4 text-center">Match</th>
-                            <th class="p-4 text-center">Pari</th>
+                            <th class="p-4 text-center">Pari Joueur</th>
                             <th class="p-4 text-right">Action</th>
                         </tr>
                     </thead>
@@ -145,11 +160,10 @@
                                     </td>
                                     <td class="p-4 text-center text-gray-300 text-sm"><%= bet.teams %></td>
                                     <td class="p-4 text-center">
-                                        <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-lg font-mono font-bold border border-blue-800">
-                                            <% if (bet.score1 !== null && bet.score2 !== null && bet.score1 !== undefined) { %>
-                                                <%= bet.score1 %> - <%= bet.score2 %>
-                                            <% } else { %>
-                                                <%= bet.prediction %>
+                                        <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs font-bold border border-blue-800">
+                                            Qualifié : <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : bet.teams.split(' - ')[1] %>
+                                            <% if (bet.score1 !== null && bet.score2 !== null) { %>
+                                                (Score 90m : <%= bet.score1 %> - <%= bet.score2 %>)
                                             <% } %>
                                         </span>
                                     </td>
