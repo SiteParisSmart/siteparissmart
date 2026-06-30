@@ -13,13 +13,13 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Connecté à MongoDB !"))
   .catch(err => console.error("❌ Erreur de connexion :", err));
 
-// 2. Modèles de données (CORRIGÉ : Ajout du champ badges)
+// 2. Modèles de données (CORRIGÉ : Support des scores et des phases de match)
 const User = mongoose.model('User', { 
     username: { type: String, unique: true, required: true }, 
     firstName: { type: String, required: true },
     lastName: { type: String, required: true }, 
     password: { type: String, required: true },
-    badges: { type: [String], default: [] } // Enregistre la collection permanente du joueur
+    badges: { type: [String], default: [] } 
 });
 
 const Bet = mongoose.model('Bet', {
@@ -28,7 +28,9 @@ const Bet = mongoose.model('Bet', {
     teams: String,
     code1: String,
     code2: String,
-    prediction: String,
+    prediction: String, // Contient '1', '2' ou 'N'
+    score1: { type: Number, default: null }, // Score pronostiqué Équipe 1
+    score2: { type: Number, default: null }, // Score pronostiqué Équipe 2
     datePari: Date 
 });
 
@@ -37,7 +39,10 @@ const Match = mongoose.model('Match', {
     code1: String, 
     code2: String, 
     date: Date,
-    result: { type: String, default: null }, 
+    phase: { type: String, default: 'seizieme' }, // 'seizieme', 'huitieme', 'quart', 'demie', 'finale'
+    result: { type: String, default: null }, // Contient '1', '2' ou 'N' après traitement
+    score1: { type: Number, default: null }, // Score réel final Équipe 1
+    score2: { type: Number, default: null }, // Score réel final Équipe 2
     status: { type: String, default: 'open' } 
 });
 
@@ -72,16 +77,36 @@ app.get('/', async (req, res) => {
             // Récupérer les paris de ce joueur spécifique
             const userBets = allBets.filter(b => b.user === u.username);
             
-            // 🔄 ÉTAPE A : Calcul des points accumulés
+            // 🔄 ÉTAPE A : Calcul des points accumulés dynamique selon la règle de phase
             userBets.forEach(bet => {
                 const match = matches.find(m => m._id.toString() === bet.matchId);
-                if (match && match.result && match.result === bet.prediction) {
-                    points += 3;
+                if (match && match.result) {
+                    const isKnockout = ['huitieme', 'quart', 'demie', 'finale'].includes(match.phase);
+
+                    if (!isKnockout) {
+                        // 16èmes de finale : Règle classique de base (Victoire simple = 3 points d'après ton ancien code)
+                        if (match.result === bet.prediction) {
+                            points += 3;
+                        }
+                    } else {
+                        // À partir des 8èmes de finale : Barème évolué cumulable
+                        const joueurVainqueur = bet.score1 > bet.score2 ? '1' : (bet.score1 < bet.score2 ? '2' : 'N');
+                        
+                        // Règle 1 : Trouve le vainqueur à la fin du temps réglementaire -> +3 pts
+                        let aTrouveVainqueur = (joueurVainqueur === match.result);
+                        if (aTrouveVainqueur) {
+                            points += 3;
+                        }
+                        
+                        // Règle 2 : Trouve le score exact exact -> +3 pts supplémentaires
+                        if (bet.score1 === match.score1 && bet.score2 === match.score2) {
+                            points += 3;
+                        }
+                    }
                 }
             });
 
             // 🔄 ÉTAPE B : Calcul de la plus longue série de bons pronos (Badges)
-            // On trie les matchs par date pour suivre la chronologie réelle des résultats
             const closedMatchesSorted = matches
                 .filter(m => m.result !== null)
                 .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -90,22 +115,31 @@ app.get('/', async (req, res) => {
             let maxStreak = 0;
 
             closedMatchesSorted.forEach(match => {
-                // On cherche si l'utilisateur a parié sur ce match clos
                 const bet = userBets.find(b => b.matchId === match._id.toString());
                 
                 if (bet) {
-                    if (bet.prediction === match.result) {
-                        currentStreak++; // Gagné ! La série augmente
+                    const isKnockout = ['huitieme', 'quart', 'demie', 'finale'].includes(match.phase);
+                    let isCorrect = false;
+
+                    if (!isKnockout) {
+                        isCorrect = (bet.prediction === match.result);
+                    } else {
+                        const joueurVainqueur = bet.score1 > bet.score2 ? '1' : (bet.score1 < bet.score2 ? '2' : 'N');
+                        // On considère que le prono fait partie de la série si au moins le vainqueur est bon
+                        isCorrect = (joueurVainqueur === match.result);
+                    }
+
+                    if (isCorrect) {
+                        currentStreak++; 
                         if (currentStreak > maxStreak) {
                             maxStreak = currentStreak;
                         }
                     } else {
-                        currentStreak = 0; // Perdu ! La série en cours se brise
+                        currentStreak = 0; 
                     }
                 }
             });
 
-            // Attribution dynamique des badges selon la performance maximale enregistrée
             let calculatedBadges = [];
             if (maxStreak >= 3)  calculatedBadges.push('streak-3');
             if (maxStreak >= 5)  calculatedBadges.push('streak-5');
@@ -115,12 +149,11 @@ app.get('/', async (req, res) => {
                 name: `${u.firstName} ${u.lastName}`,
                 points: points,
                 email: u.username,
-                badges: calculatedBadges // Donné transmise à index.ejs
+                badges: calculatedBadges
             };
         });
 
         leaderboard.sort((a, b) => b.points - a.points);
-
         const bettedMatchIds = myBets.map(b => b.matchId.toString());
 
         res.render('index', { 
@@ -143,7 +176,7 @@ app.get('/faq', (req, res) => {
 
 app.post('/bet', async (req, res) => {
     try {
-        const { matchId, prediction } = req.body; 
+        const { matchId, prediction, score1, score2, betId } = req.body; 
         const username = req.session.user.username;
 
         const matchData = await Match.findById(matchId);
@@ -157,17 +190,34 @@ app.post('/bet', async (req, res) => {
             return res.status(403).send("Trop tard, le match a commencé !");
         }
 
-        await Bet.findOneAndUpdate(
-            { user: username, matchId: matchId }, 
-            { 
-                prediction: prediction,
-                teams: matchData.teams,
-                code1: matchData.code1,
-                code2: matchData.code2,
-                datePari: new Date()
-            }, 
-            { upsert: true, new: true }
-        );
+        const isKnockout = ['huitieme', 'quart', 'demie', 'finale'].includes(matchData.phase);
+
+        let updateData = {
+            teams: matchData.teams,
+            code1: matchData.code1,
+            code2: matchData.code2,
+            datePari: new Date()
+        };
+
+        if (isKnockout) {
+            updateData.score1 = parseInt(score1);
+            updateData.score2 = parseInt(score2);
+            updateData.prediction = updateData.score1 > updateData.score2 ? '1' : (updateData.score1 < updateData.score2 ? '2' : 'N');
+        } else {
+            updateData.prediction = prediction;
+            updateData.score1 = null;
+            updateData.score2 = null;
+        }
+
+        if (betId) {
+            await Bet.findByIdAndUpdate(betId, updateData);
+        } else {
+            await Bet.findOneAndUpdate(
+                { user: username, matchId: matchId }, 
+                updateData, 
+                { upsert: true, new: true }
+            );
+        }
 
         res.redirect('/');
         
@@ -269,22 +319,34 @@ app.get('/admin/:password', async (req, res) => {
     }
 });
 
+// Ajout du paramètre "phase" à la création du match
 app.post('/admin/match', async (req, res) => {
-    const { team1, code1, team2, code2, date } = req.body;
+    const { team1, code1, team2, code2, date, phase } = req.body;
     const newMatch = new Match({ 
         teams: `${team1} - ${team2}`,
         code1: code1.toLowerCase(),
         code2: code2.toLowerCase(),
-        date: date
+        date: date,
+        phase: phase || 'seizieme'
     });
     await newMatch.save();
     res.redirect('back');
 });
 
+// Mis à jour pour gérer la clôture par score exact pour les phases finales
 app.post('/admin/match/result', async (req, res) => {
     try {
-        const { matchId, result } = req.body;
-        await Match.findByIdAndUpdate(matchId, { result: result });
+        const { matchId, result, score1, score2 } = req.body;
+        
+        let updateFields = { result: result };
+        if (score1 !== undefined && score2 !== undefined && score1 !== "" && score2 !== "") {
+            updateFields.score1 = parseInt(score1);
+            updateFields.score2 = parseInt(score2);
+            // Calcule automatiquement le résultat '1', '2' ou 'N' pour le fallback
+            updateFields.result = updateFields.score1 > updateFields.score2 ? '1' : (updateFields.score1 < updateFields.score2 ? '2' : 'N');
+        }
+
+        await Match.findByIdAndUpdate(matchId, updateFields);
         res.redirect('back');
     } catch (err) { res.status(500).send("Erreur résultat"); }
 });

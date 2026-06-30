@@ -27,8 +27,20 @@
                     <input type="text" name="code2" placeholder="DE" class="w-20 bg-gray-900 p-3 rounded-xl border border-gray-700 text-center uppercase font-bold text-blue-400" maxlength="6" required>
                     <input type="text" name="team2" placeholder="Équipe Extérieur" class="flex-1 bg-gray-900 p-3 rounded-xl border border-gray-700" required>
                 </div>
+                
+                <div>
+                    <select name="phase" class="bg-gray-900 p-3 rounded-xl border border-gray-700 w-full text-gray-300" required>
+                        <option value="seizieme">16èmes de finale (Victoire Simple)</option>
+                        <option value="huitieme">8èmes de finale (Score Exact + Vainqueur)</option>
+                        <option value="quart">Quarts de finale (Score Exact + Vainqueur)</option>
+                        <option value="demie">Demi-finales (Score Exact + Vainqueur)</option>
+                        <option value="finale">Finale (Score Exact + Vainqueur)</option>
+                    </select>
+                </div>
+
                 <input type="datetime-local" name="date" class="bg-gray-900 p-3 rounded-xl border border-gray-700 w-full" required>
-                <button type="submit" class="bg-green-600 py-3 rounded-xl font-black hover:bg-green-500 uppercase tracking-widest transition-all">
+                
+                <button type="submit" class="md:col-span-2 bg-green-600 py-3 rounded-xl font-black hover:bg-green-500 uppercase tracking-widest transition-all">
                     Ajouter le Match
                 </button>
             </form>
@@ -41,30 +53,56 @@
             
             <div class="space-y-4">
                 <% if (matches && matches.length > 0) { %>
-                    <% matches.forEach(match => { %>
+                    <% matches.forEach(match => { 
+                        const isKnockout = ['huitieme', 'quart', 'demie', 'finale'].includes(match.phase);
+                    %>
                         <div class="bg-gray-900/50 p-4 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-gray-700">
-                            <div class="flex items-center gap-3">
-                                <img src="https://flagcdn.com/w40/<%= match.code1.toLowerCase() %>.png" class="w-8 rounded-sm">
-                                <span class="text-white font-bold"><%= match.teams %></span>
-                                <img src="https://flagcdn.com/w40/<%= match.code2.toLowerCase() %>.png" class="w-8 rounded-sm">
+                            <div class="flex flex-col sm:flex-row items-center gap-3">
+                                <span class="text-xs bg-gray-800 px-2 py-1 rounded border border-gray-700 text-yellow-400 uppercase font-mono font-bold">
+                                    <%= match.phase ? match.phase.replace('e', 'e ') : '16e' %>
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <img src="https://flagcdn.com/w40/<%= match.code1.toLowerCase() %>.png" class="w-8 rounded-sm">
+                                    <span class="text-white font-bold"><%= match.teams %></span>
+                                    <img src="https://flagcdn.com/w40/<%= match.code2.toLowerCase() %>.png" class="w-8 rounded-sm">
+                                </div>
                             </div>
 
                             <div class="flex items-center gap-4">
-                                <% if (!match.result) { %>
-                                    <form action="/admin/match/result" method="POST" class="flex items-center gap-2 bg-black/30 p-1 rounded-lg">
-                                        <input type="hidden" name="matchId" value="<%= match._id %>">
-                                        <button name="result" value="1" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">1</button>
-                                        <button name="result" value="N" class="bg-gray-600 hover:bg-gray-500 text-white w-8 h-8 rounded font-bold">N</button>
-                                        <button name="result" value="2" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">2</button>
-                                    </form>
+                                <% if (match.result === null || match.result === undefined || match.result === "") { %>
+                                    
+                                    <% if (!isKnockout) { %>
+                                        <form action="/admin/match/result" method="POST" class="flex items-center gap-2 bg-black/30 p-1 rounded-lg">
+                                            <input type="hidden" name="matchId" value="<%= match._id %>">
+                                            <button name="result" value="1" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">1</button>
+                                            <button name="result" value="N" class="bg-gray-600 hover:bg-gray-500 text-white w-8 h-8 rounded font-bold">N</button>
+                                            <button name="result" value="2" class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded font-bold">2</button>
+                                        </form>
+                                    <% } else { %>
+                                        <form action="/admin/match/result" method="POST" class="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-xl border border-gray-700">
+                                            <input type="hidden" name="matchId" value="<%= match._id %>">
+                                            <input type="number" name="score1" min="0" placeholder="0" class="w-12 bg-gray-900 text-center font-black p-1 rounded border border-gray-700 text-blue-400" required>
+                                            <span class="text-gray-500 font-bold">-</span>
+                                            <input type="number" name="score2" min="0" placeholder="0" class="w-12 bg-gray-900 text-center font-black p-1 rounded border border-gray-700 text-blue-400" required>
+                                            <button type="submit" class="bg-green-600 hover:bg-green-500 text-xs px-2 py-1.5 rounded font-bold uppercase tracking-wider ml-1">OK</button>
+                                        </form>
+                                    <% } %>
+
                                 <% } else { %>
                                     <div class="flex items-center gap-2">
                                         <span class="bg-green-900/30 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-800">
-                                            RÉSULTAT : <%= match.result %>
+                                            <% if (match.score1 !== null && match.score2 !== null) { %>
+                                                SCORE : <%= match.score1 %> - <%= match.score2 %> (<%= match.result %>)
+                                            <% } else { %>
+                                                RÉSULTAT : <%= match.result %>
+                                            <% } %>
                                         </span>
                                         <form action="/admin/match/result" method="POST">
                                             <input type="hidden" name="matchId" value="<%= match._id %>">
-                                            <button name="result" value="" class="text-gray-500 hover:text-white text-xs underline">Modifier</button>
+                                            <input type="hidden" name="result" value="">
+                                            <input type="hidden" name="score1" value="">
+                                            <input type="hidden" name="score2" value="">
+                                            <button type="submit" class="text-gray-500 hover:text-white text-xs underline">Modifier</button>
                                         </form>
                                     </div>
                                 <% } %>
@@ -108,7 +146,11 @@
                                     <td class="p-4 text-center text-gray-300 text-sm"><%= bet.teams %></td>
                                     <td class="p-4 text-center">
                                         <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-lg font-mono font-bold border border-blue-800">
-                                            <%= bet.prediction %>
+                                            <% if (bet.score1 !== null && bet.score2 !== null && bet.score1 !== undefined) { %>
+                                                <%= bet.score1 %> - <%= bet.score2 %>
+                                            <% } else { %>
+                                                <%= bet.prediction %>
+                                            <% } %>
                                         </span>
                                     </td>
                                     <td class="p-4 text-right">

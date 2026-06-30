@@ -15,12 +15,12 @@
             border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.4); /* Bleu transparent */
+            background: rgba(59, 130, 246, 0.4);
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(59, 130, 246, 0.7); /* Bleu plus vif au survol */
+            background: rgba(59, 130, 246, 0.7);
         }
     </style>
 </head>
@@ -38,7 +38,7 @@
                 <span class="text-sm hidden md:block text-gray-400">Salut, <strong class="text-white"><%= user.firstName %></strong></span>
                 
                 <a href="/faq" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-bold transition-colors">
-                    ❓ FAQ
+                    ❓ FAQ & Règles
                 </a>
                 
                 <a href="/logout" class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-lg font-bold transition-colors">Déconnexion</a>
@@ -50,18 +50,19 @@
         
         <!-- 🏆 SECTION CLASSEMENT GÉNÉRAL -->
         <section class="bg-gray-800 p-6 rounded-3xl border border-yellow-500/30 shadow-2xl">
-            <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                <span class="text-3xl text-yellow-400">🏆</span> CLASSEMENT GÉNÉRAL
-            </h2>
+            <div class="flex items-center justify-between mb-6 gap-4">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/2026_FIFA_World_Cup_emblem_%28without_trophy%29.svg" alt="FIFA 2026" class="h-10 md:h-12 opacity-90">
+                <h2 class="text-xl md:text-2xl font-black text-white flex items-center gap-3 text-center tracking-wide">
+                    <span class="text-2xl md:text-3xl text-yellow-400 hidden sm:inline">🏆</span> CLASSEMENT GÉNÉRAL
+                </h2>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/2026_FIFA_World_Cup_emblem_%28without_trophy%29.svg" alt="FIFA 2026" class="h-10 md:h-12 opacity-90">
+            </div>
             
-            <!-- 📦 Boîte de confinement de l'ascenseur -->
             <div class="max-h-[510px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
                 <% leaderboard.forEach((player, index) => { 
-                    // Sécurité pour s'assurer que player.badges est toujours un tableau
                     const playerBadges = player.badges || [];
                     const hasDevinDivin = playerBadges.includes('streak-10');
 
-                    // Détermination du style de la ligne (Devin Divin > Moi > Standard)
                     let cardClass = "bg-gray-900/50 border border-gray-700";
                     if (hasDevinDivin) {
                         cardClass = "bg-purple-950/40 border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-pulse-slow";
@@ -73,70 +74,30 @@
                         <div class="flex items-center gap-4">
                             <span class="text-xl font-black w-8 <%= index === 0 ? 'text-yellow-400' : (hasDevinDivin ? 'text-purple-400' : 'text-gray-500') %>">#<%= index + 1 %></span>
                             <div>
-                                <!-- Ligne 1 : Émoji de position + Nom + Badges de statut -->
                                 <div class="flex flex-wrap items-center gap-2">
                                     <p class="text-white font-bold flex items-center gap-2">
-                                        <% if (hasDevinDivin) { %>
-                                            <span>🔮</span>
-                                        <% } else if (index === 0) { %>
-                                            <span>👑</span> 
-                                        <% } else if (index === 1) { %>
-                                            <span>🥈</span> 
-                                        <% } else if (index === 2) { %>
-                                            <span>🥉</span> 
-                                        <% } else if (index >= 3 && index <= 5) { %>
-                                            <span>🔥</span> 
-                                        <% } else { %>
-                                            <span>⚽</span> 
-                                        <% } %>
+                                        <% if (hasDevinDivin) { %> <span>🔮</span> <% } %>
                                         <%= player.name %>
                                     </p>
-                                    
                                     <% if(player.email === user.username) { %>
                                         <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Moi</span>
                                     <% } %>
-
                                     <% if(hasDevinDivin) { %>
                                         <span class="text-[9px] bg-purple-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider shadow-sm">Légende</span>
                                     <% } %>
                                 </div>
 
-                                <!-- Ligne 2 : 🎖️ VITRINE DES SUCCÈS -->
+                                <!-- Vitrine des Succès (Badges de Série) -->
                                 <div class="flex flex-wrap gap-1.5 mt-2 pt-1.5 border-t border-white/5">
-                                    
-                                    <!-- 🔥 Succès : 3 bons paris d'affilée -->
                                     <% if (playerBadges.includes('streak-3')) { %>
-                                        <span title="Succès débloqué : 3 bons paris consécutifs d'affilée !" class="cursor-help text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
-                                            🔥 Triplé Chaud
-                                        </span>
-                                    <% } else { %>
-                                        <span title="Verrouillé : Réaliser 3 bons paris consécutifs d'affilée" class="cursor-help text-[9px] bg-white/5 text-white/20 border border-white/5 px-2 py-0.5 rounded-md font-bold flex items-center gap-1 select-none opacity-20 grayscale">
-                                            🔒 Triplé Chaud
-                                        </span>
+                                        <span title="3 bons paris d'affilée !" class="cursor-help text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md font-bold">🔥 Triplé Chaud</span>
                                     <% } %>
-
-                                    <!-- ⚡ Succès : 5 bons paris d'affilée -->
                                     <% if (playerBadges.includes('streak-5')) { %>
-                                        <span title="Succès débloqué : 5 bons paris consécutifs d'affilée !" class="cursor-help text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-md font-bold flex items-center gap-1 shadow-[0_0_5px_rgba(239,68,68,0.2)] animate-pulse">
-                                            ⚡ Main Chaude
-                                        </span>
-                                    <% } else { %>
-                                        <span title="Verrouillé : Réaliser 5 bons paris consécutifs d'affilée" class="cursor-help text-[9px] bg-white/5 text-white/20 border border-white/5 px-2 py-0.5 rounded-md font-bold flex items-center gap-1 select-none opacity-20 grayscale">
-                                            🔒 Main Chaude
-                                        </span>
+                                        <span title="5 bons paris d'affilée !" class="cursor-help text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-md font-bold animate-pulse">⚡ Main Chaude</span>
                                     <% } %>
-
-                                    <!-- 🔮 Succès : 10 bons paris d'affilée -->
                                     <% if (hasDevinDivin) { %>
-                                        <span title="LÉGENDAIRE : 10 bons paris consécutifs d'affilée !" class="cursor-help text-[9px] bg-purple-500 text-white border border-purple-400 px-2 py-0.5 rounded-md font-black flex items-center gap-1 shadow-[0_0_8px_rgba(168,85,247,0.6)] tracking-wide">
-                                            🔮 Devin Divin
-                                        </span>
-                                    <% } else { %>
-                                        <span title="LÉGENDAIRE : Réaliser 10 bons paris consécutifs d'affilée" class="cursor-help text-[9px] bg-white/5 text-white/20 border border-white/5 px-2 py-0.5 rounded-md font-bold flex items-center gap-1 select-none opacity-20 grayscale">
-                                            🔒 Devin Divin
-                                        </span>
+                                        <span title="LÉGENDAIRE : 10 bons paris d'affilée !" class="cursor-help text-[9px] bg-purple-500 text-white border border-purple-400 px-2 py-0.5 rounded-md font-black shadow-[0_0_8px_rgba(168,85,247,0.6)]">🔮 Devin Divin</span>
                                     <% } %>
-
                                 </div>
                             </div>
                         </div>
@@ -168,39 +129,29 @@
                             <option value="<%= match._id %>" 
                             data-c1="<%= match.code1 %>" 
                             data-c2="<%= match.code2 %>"
+                            data-phase="<%= match.phase || 'seizieme' %>"
                             data-deadline="<%= match.date.getTime() - (2 * 60 * 60 * 1000) %>" 
                             <%= alreadyBetted ? 'disabled class="text-gray-600"' : '' %>>
-                                <%= match.teams %> 
+                                [<%= (match.phase || '16e').toUpperCase() %>] <%= match.teams %> 
                                 <%= alreadyBetted ? '✅ (Déjà parié)' : '— ' + new Date(match.date.getTime()).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) %>
                             </option>
                         <% }) %>
                     </select>
-                    <p class="text-[10px] text-gray-500 mt-2 italic">
-                        * Les matchs cochés ✅ sont déjà pariés. Pour les modifier, rendez-vous dans la section "Mes Pronos" en bas de page.
-                    </p>
                 </div>
+
+                <!-- 💡 BAREME DES POINTS DYNAMIQUE (Informatif) -->
+                <div id="pointsRuleBadge" class="hidden text-center p-3 rounded-xl text-xs font-bold border"></div>
 
                 <div id="timerContainer" class="hidden bg-gray-900/50 border border-gray-700 p-4 rounded-2xl text-center">
                     <p class="text-[10px] text-gray-500 uppercase font-black mb-1">Fin des pronos dans :</p>
                     <div id="countdown" class="text-2xl font-black text-yellow-400 font-mono">--:--:--</div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <label class="cursor-pointer group">
-                        <input type="radio" name="prediction" value="1" class="hidden peer" required>
-                        <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
-                            <img id="flag1" src="https://flagcdn.com/w80/un.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
-                            <span class="text-xs font-bold text-gray-400 peer-checked:text-white">1</span>
-                        </div>
-                    </label>
-
-                    <label class="cursor-pointer group">
-                        <input type="radio" name="prediction" value="2" class="hidden peer">
-                        <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
-                            <img id="flag2" src="https://flagcdn.com/w80/un.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
-                            <span class="text-xs font-bold text-gray-400 peer-checked:text-white">2</span>
-                        </div>
-                    </label>
+                <!-- 🎛️ CONTENEUR OPTIONS DE JEU INJECTÉ DYNAMIQUEMENT -->
+                <div id="dynamicPredictionContainer">
+                    <p class="text-center text-xs text-gray-500 italic p-6 bg-gray-900/30 rounded-2xl border border-gray-700/50">
+                        Sélectionnez un match ci-dessus pour afficher les options de pronostic.
+                    </p>
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition text-lg uppercase disabled:opacity-50 disabled:cursor-not-allowed">
@@ -217,18 +168,33 @@
                    myBets.forEach(bet => { %>
                     <div class="bg-gray-900/50 p-5 rounded-3xl border border-gray-700 flex flex-col md:flex-row items-center gap-6 shadow-xl">
                         <div class="bg-gray-900 p-4 rounded-2xl w-20 h-20 flex flex-col items-center justify-center shrink-0 border border-gray-700">
-                            <% let displayCode = (bet.prediction === '1') ? bet.code1 : (bet.prediction === '2' ? bet.code2 : null);
-                               if(displayCode) { %>
-                                <img src="https://flagcdn.com/w80/<%= displayCode %>.png" class="w-12 rounded shadow-sm">
+                            <% 
+                            let displayCode = null;
+                            if (bet.prediction === '1') displayCode = bet.code1;
+                            else if (bet.prediction === '2') displayCode = bet.code2;
+                            
+                            if(displayCode) { %>
+                                <img src="https://flagcdn.com/w80/<%= displayCode.toLowerCase() %>.png" class="w-12 rounded shadow-sm">
+                            <% } else if (bet.score1 !== undefined && bet.score2 !== undefined) { %>
+                                <span class="text-xl font-black text-blue-400"><%= bet.score1 %>-<%= bet.score2 %></span>
                             <% } else { %>
                                 <span class="text-2xl">🤝</span>
                             <% } %>
                         </div>
                         <div class="flex-1 text-center md:text-left">
                             <p class="text-xl font-black text-white"><%= bet.teams %></p>
-                            <p class="text-xs font-bold text-blue-400 uppercase">Pari : <span class="text-white"><%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : (bet.prediction === '2' ? bet.teams.split(' - ')[1] : 'Nul') %></span></p>
+                            <p class="text-xs font-bold text-blue-400 uppercase">
+                                Pari : 
+                                <span class="text-white">
+                                    <% if (bet.score1 !== undefined && bet.score2 !== undefined) { %>
+                                        Score Exact (<%= bet.score1 %> - <%= bet.score2 %>)
+                                    <% } else { %>
+                                        <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : (bet.prediction === '2' ? bet.teams.split(' - ')[1] : 'Nul') %>
+                                    <% } %>
+                                </span>
+                            </p>
                         </div>
-                        <button onclick="editBet('<%= bet._id %>', '<%= bet.matchId %>', '<%= bet.prediction %>', '<%= bet.code1 %>', '<%= bet.code2 %>')" class="bg-gray-700 hover:bg-white hover:text-black text-gray-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Modifier</button>
+                        <button onclick="editBet('<%= bet._id %>', '<%= bet.matchId %>', '<%= bet.prediction || '' %>', '<%= bet.score1 !== undefined ? bet.score1 : '' %>', '<%= bet.score2 !== undefined ? bet.score2 : '' %>', '<%= bet.code1 %>', '<%= bet.code2 %>')" class="bg-gray-700 hover:bg-white hover:text-black text-gray-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Modifier</button>
                     </div>
                 <% }) %>
             </div>
@@ -241,30 +207,73 @@
 
     const betForm = document.getElementById('betForm');
     const matchSelect = document.getElementById('matchSelect');
-    const img1 = document.getElementById('flag1');
-    const img2 = document.getElementById('flag2');
+    const dynamicContainer = document.getElementById('dynamicPredictionContainer');
     const timerContainer = document.getElementById('timerContainer');
     const countdownEl = document.getElementById('countdown');
     const submitBtn = document.getElementById('submitBtn');
     const statusBadge = document.getElementById('statusBadge');
+    const pointsRuleBadge = document.getElementById('pointsRuleBadge');
 
     if (matchSelect) {
         matchSelect.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
             if (!opt || opt.value === "") {
                 timerContainer.classList.add('hidden');
-                img1.src = "https://flagcdn.com/w80/un.png";
-                img2.src = "https://flagcdn.com/w80/un.png";
+                pointsRuleBadge.classList.add('hidden');
+                dynamicContainer.innerHTML = `<p class="text-center text-xs text-gray-500 italic p-6 bg-gray-900/30 rounded-2xl border border-gray-700/50">Sélectionnez un match ci-dessus pour afficher les options de pronostic.</p>`;
                 return;
             }
 
-            const c1 = opt.getAttribute('data-c1');
-            const c2 = opt.getAttribute('data-c2');
+            const c1 = opt.getAttribute('data-c1') || 'un';
+            const c2 = opt.getAttribute('data-c2') || 'un';
+            const phase = opt.getAttribute('data-phase');
             const deadlineStr = opt.getAttribute('data-deadline');
 
-            img1.src = c1 ? "https://flagcdn.com/w80/" + c1.toLowerCase() + ".png" : "https://flagcdn.com/w80/un.png";
-            img2.src = c2 ? "https://flagcdn.com/w80/" + c2.toLowerCase() + ".png" : "https://flagcdn.com/w80/un.png";
+            // 📢 Affichage de la bulle d'information sur les points selon la phase
+            pointsRuleBadge.classList.remove('hidden');
+            if (phase === 'huitieme' || phase === 'quart' || phase === 'demie' || phase === 'finale') {
+                pointsRuleBadge.innerText = "💡 RÈGLE : Vainqueur trouvé = 3 pts | Score exact (Fin du tps réglementaire) = +3 pts bonus !";
+                pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-blue-950/40 border-blue-500/40 text-blue-300";
+                
+                // Formulaire Score Exact
+                dynamicContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-8 bg-gray-900/40 p-6 rounded-2xl border border-gray-700/50">
+                        <div class="flex flex-col items-center space-y-3">
+                            <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1'}</label>
+                            <input type="number" name="score1" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
+                        </div>
+                        <div class="flex flex-col items-center space-y-3">
+                            <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2'}</label>
+                            <input type="number" name="score2" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
+                        </div>
+                    </div>`;
+            } else {
+                pointsRuleBadge.innerText = "💡 RÈGLE : Victoire simple trouvée = 1 point.";
+                pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-gray-900/50 border-gray-700 text-gray-400";
+                
+                // Formulaire 1 ou 2
+                dynamicContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="prediction" value="1" class="hidden peer" required>
+                            <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
+                                <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
+                                <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Victoire Domicile</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="prediction" value="2" class="hidden peer">
+                            <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
+                                <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
+                                <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Victoire Extérieur</span>
+                            </div>
+                        </label>
+                    </div>`;
+            }
 
+            // Gestion du Timer / Décompte
             clearInterval(countdownInterval);
             if (!deadlineStr) {
                 timerContainer.classList.add('hidden');
@@ -298,17 +307,14 @@
                 
                 countdownEl.innerText = text;
                 submitBtn.disabled = false;
-                
-                if (!isEditing) {
-                    submitBtn.innerText = "Valider mon pari";
-                }
+                if (!isEditing) submitBtn.innerText = "Valider mon pari";
                 statusBadge.innerText = "Ouvert";
                 statusBadge.className = "absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-green-500/20 text-green-400 border border-green-500/50";
             }, 1000);
         });
     }
 
-    function editBet(betId, matchId, prediction, c1, c2) {
+    function editBet(betId, matchId, prediction, score1, score2, c1, c2) {
         isEditing = true;
         const optionToEnable = matchSelect.querySelector(`option[value="${matchId}"]`);
         if (optionToEnable) {
@@ -319,8 +325,17 @@
         matchSelect.value = matchId;
         matchSelect.dispatchEvent(new Event('change'));
         
-        const radio = document.querySelector(`input[name="prediction"][value="${prediction}"]`);
-        if (radio) radio.checked = true;
+        setTimeout(() => {
+            if (score1 !== '' && score2 !== '') {
+                const inputScore1 = document.querySelector('input[name="score1"]');
+                const inputScore2 = document.querySelector('input[name="score2"]');
+                if (inputScore1) inputScore1.value = score1;
+                if (inputScore2) inputScore2.value = score2;
+            } else if (prediction !== '') {
+                const radio = document.querySelector(`input[name="prediction"][value="${prediction}"]`);
+                if (radio) radio.checked = true;
+            }
+        }, 50);
 
         let hiddenId = document.getElementById('editingBetId');
         if (!hiddenId) {
