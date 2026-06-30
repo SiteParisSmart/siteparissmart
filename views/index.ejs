@@ -87,7 +87,7 @@
                                     <% } %>
                                 </div>
 
-                                <!-- Vitrine des Succès (Badges de Série) -->
+                                <!-- Vitrine des Succès -->
                                 <div class="flex flex-wrap gap-1.5 mt-2 pt-1.5 border-t border-white/5">
                                     <% if (playerBadges.includes('streak-3')) { %>
                                         <span title="3 bons paris d'affilée !" class="cursor-help text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md font-bold">🔥 Triplé Chaud</span>
@@ -139,7 +139,7 @@
                     </select>
                 </div>
 
-                <!-- 💡 BAREME DES POINTS DYNAMIQUE (Informatif) -->
+                <!-- 💡 BAREME DES POINTS DYNAMIQUE -->
                 <div id="pointsRuleBadge" class="hidden text-center p-3 rounded-xl text-xs font-bold border"></div>
 
                 <div id="timerContainer" class="hidden bg-gray-900/50 border border-gray-700 p-4 rounded-2xl text-center">
@@ -170,13 +170,18 @@
                         <div class="bg-gray-900 p-4 rounded-2xl w-20 h-20 flex flex-col items-center justify-center shrink-0 border border-gray-700">
                             <% 
                             let displayCode = null;
-                            if (bet.prediction === '1') displayCode = bet.code1;
-                            else if (bet.prediction === '2') displayCode = bet.code2;
+                            if (bet.score1 !== null && bet.score2 !== null) {
+                                // En phase finale, on montre le drapeau de l'équipe qualifiée choisie (prediction)
+                                if (bet.prediction === '1') displayCode = bet.code1;
+                                else if (bet.prediction === '2') displayCode = bet.code2;
+                            } else {
+                                // Règle classique des poules / 16èmes
+                                if (bet.prediction === '1') displayCode = bet.code1;
+                                else if (bet.prediction === '2') displayCode = bet.code2;
+                            }
                             
                             if(displayCode) { %>
                                 <img src="https://flagcdn.com/w80/<%= displayCode.toLowerCase() %>.png" class="w-12 rounded shadow-sm">
-                            <% } else if (bet.score1 !== undefined && bet.score2 !== undefined) { %>
-                                <span class="text-xl font-black text-blue-400"><%= bet.score1 %>-<%= bet.score2 %></span>
                             <% } else { %>
                                 <span class="text-2xl">🤝</span>
                             <% } %>
@@ -186,15 +191,18 @@
                             <p class="text-xs font-bold text-blue-400 uppercase">
                                 Pari : 
                                 <span class="text-white">
-                                    <% if (bet.score1 !== undefined && bet.score2 !== undefined) { %>
-                                        Score Exact (<%= bet.score1 %> - <%= bet.score2 %>)
+                                    <% if (bet.score1 !== null && bet.score2 !== null) { %>
+                                        Score : <%= bet.score1 %> - <%= bet.score2 %> 
+                                        <% if (bet.score1 === bet.score2) { %>
+                                            (Qualifié : <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : bet.teams.split(' - ')[1] %>)
+                                        <% } %>
                                     <% } else { %>
-                                        <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : (bet.prediction === '2' ? bet.teams.split(' - ')[1] : 'Nul') %>
+                                        <%= bet.prediction === '1' ? bet.teams.split(' - ')[0] : (bet.prediction === '2' ? bet.teams.split(' - ')[1] : 'Match Nul') %>
                                     <% } %>
                                 </span>
                             </p>
                         </div>
-                        <button onclick="editBet('<%= bet._id %>', '<%= bet.matchId %>', '<%= bet.prediction || '' %>', '<%= bet.score1 !== undefined ? bet.score1 : '' %>', '<%= bet.score2 !== undefined ? bet.score2 : '' %>', '<%= bet.code1 %>', '<%= bet.code2 %>')" class="bg-gray-700 hover:bg-white hover:text-black text-gray-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Modifier</button>
+                        <button onclick="editBet('<%= bet._id %>', '<%= bet.matchId %>', '<%= bet.prediction || '' %>', '<%= bet.score1 !== null ? bet.score1 : '' %>', '<%= bet.score2 !== null ? bet.score2 : '' %>', '<%= bet.code1 %>', '<%= bet.code2 %>')" class="bg-gray-700 hover:bg-white hover:text-black text-gray-300 px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Modifier</button>
                     </div>
                 <% }) %>
             </div>
@@ -232,35 +240,84 @@
             // 📢 Affichage de la bulle d'information sur les points selon la phase
             pointsRuleBadge.classList.remove('hidden');
             if (phase === 'huitieme' || phase === 'quart' || phase === 'demie' || phase === 'finale') {
-                pointsRuleBadge.innerText = "💡 RÈGLE : Vainqueur trouvé = 3 pts | Score exact (Fin du tps réglementaire) = +3 pts bonus !";
+                pointsRuleBadge.innerText = "💡 RÈGLE : Qualifié trouvé = 3 pts | Score exact (Fin du tps réglementaire) = +3 pts bonus !";
                 pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-blue-950/40 border-blue-500/40 text-blue-300";
                 
-                // Formulaire Score Exact
+                // Formulaire Score Exact + Bloc qualification si nul
                 dynamicContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-8 bg-gray-900/40 p-6 rounded-2xl border border-gray-700/50">
-                        <div class="flex flex-col items-center space-y-3">
-                            <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1'}</label>
-                            <input type="number" name="score1" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
+                    <div class="bg-gray-900/40 p-6 rounded-2xl border border-gray-700/50 space-y-6">
+                        <div class="grid grid-cols-2 gap-8">
+                            <div class="flex flex-col items-center space-y-3">
+                                <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1'}</label>
+                                <input type="number" name="score1" id="score1Input" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
+                            </div>
+                            <div class="flex flex-col items-center space-y-3">
+                                <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2'}</label>
+                                <input type="number" name="score2" id="score2Input" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
+                            </div>
                         </div>
-                        <div class="flex flex-col items-center space-y-3">
-                            <img src="https://flagcdn.com/w80/${c2.toLowerCase()}.png" class="w-16 h-10 object-cover rounded shadow-md border border-gray-700">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">${opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2'}</label>
-                            <input type="number" name="score2" min="0" max="20" placeholder="0" class="w-20 bg-gray-900 border-2 border-gray-700 focus:border-blue-500 text-center text-2xl font-black py-2 rounded-xl text-white outline-none transition" required>
+
+                        <!-- 🤝 SECTION SÉCURITÉ MATCH NUL (PROLONGATIONS / TAB) -->
+                        <div id="qualificationBlock" class="hidden border-t border-gray-700/50 pt-4 text-center space-y-3">
+                            <p class="text-xs font-bold text-yellow-400 uppercase">En cas de match nul, qui se qualifie au bout du suspense ?</p>
+                            <div class="flex justify-center gap-4">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="qualifiedWinner" value="1" id="qualify1" class="peer hidden">
+                                    <div class="peer-checked:bg-blue-600 peer-checked:text-white bg-gray-800 border border-gray-700 px-4 py-2 rounded-xl text-xs font-bold text-gray-400 transition-all">
+                                        ${opt.text.split(' - ')[0]?.split('] ')[1] || 'Équipe 1'}
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="qualifiedWinner" value="2" id="qualify2" class="peer hidden">
+                                    <div class="peer-checked:bg-blue-600 peer-checked:text-white bg-gray-800 border border-gray-700 px-4 py-2 rounded-xl text-xs font-bold text-gray-400 transition-all">
+                                        ${opt.text.split(' - ')[1]?.split(' — ')[0] || 'Équipe 2'}
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>`;
+
+                const s1 = document.getElementById('score1Input');
+                const s2 = document.getElementById('score2Input');
+                const qBlock = document.getElementById('qualificationBlock');
+                const q1 = document.getElementById('qualify1');
+                const q2 = document.getElementById('qualify2');
+
+                function checkEquality() {
+                    if(s1.value !== "" && s2.value !== "" && parseInt(s1.value) === parseInt(s2.value)) {
+                        qBlock.classList.remove('hidden');
+                        q1.required = true;
+                    } else {
+                        qBlock.classList.add('hidden');
+                        q1.required = false;
+                        q1.checked = false;
+                        q2.checked = false;
+                    }
+                }
+                s1.addEventListener('input', checkEquality);
+                s2.addEventListener('input', checkEquality);
+
             } else {
-                pointsRuleBadge.innerText = "💡 RÈGLE : A partir des 8ème de Finale : Victoire Trouvée : 3 points, Score Exact trouvé à la fin du temps réglementaire : 3 points supplémentaires ";
+                pointsRuleBadge.innerText = "💡 RÈGLE : Victoire simple = 3 points. Match nul possible à la fin des 90 minutes.";
                 pointsRuleBadge.className = "text-center p-3 rounded-xl text-xs font-bold bg-gray-900/50 border-gray-700 text-gray-400";
                 
-                // Formulaire 1 ou 2
+                // Formulaire 1, N ou 2 classique des poules/16èmes
                 dynamicContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-3 gap-4">
                         <label class="cursor-pointer group">
                             <input type="radio" name="prediction" value="1" class="hidden peer" required>
                             <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center">
                                 <img src="https://flagcdn.com/w80/${c1.toLowerCase()}.png" class="w-12 h-8 object-cover mb-2 rounded shadow-md border border-gray-700">
                                 <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Victoire Domicile</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="prediction" value="N" class="hidden peer">
+                            <div class="peer-checked:bg-blue-600 peer-checked:border-transparent bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-center transition flex flex-col items-center justify-center h-full">
+                                <span class="text-2xl mb-1">🤝</span>
+                                <span class="text-xs font-bold text-gray-400 peer-checked:text-white">Match Nul</span>
                             </div>
                         </label>
                         <label class="cursor-pointer group">
@@ -327,15 +384,27 @@
         
         setTimeout(() => {
             if (score1 !== '' && score2 !== '') {
-                const inputScore1 = document.querySelector('input[name="score1"]');
-                const inputScore2 = document.querySelector('input[name="score2"]');
-                if (inputScore1) inputScore1.value = score1;
-                if (inputScore2) inputScore2.value = score2;
+                const inputScore1 = document.getElementById('score1Input');
+                const inputScore2 = document.getElementById('score2Input');
+                if (inputScore1) {
+                    inputScore1.value = score1;
+                    inputScore1.dispatchEvent(new Event('input')); // Force l'apparition du bloc de qualif si égalité
+                }
+                if (inputScore2) {
+                    inputScore2.value = score2;
+                    inputScore2.dispatchEvent(new Event('input'));
+                }
+                
+                // Si égalité, on coche la bonne radio de qualification
+                if (parseInt(score1) === parseInt(score2) && prediction !== '') {
+                    const qualifRadio = document.querySelector(`input[name="qualifiedWinner"][value="${prediction}"]`);
+                    if (qualifRadio) qualifRadio.checked = true;
+                }
             } else if (prediction !== '') {
                 const radio = document.querySelector(`input[name="prediction"][value="${prediction}"]`);
                 if (radio) radio.checked = true;
             }
-        }, 50);
+        }, 100);
 
         let hiddenId = document.getElementById('editingBetId');
         if (!hiddenId) {
