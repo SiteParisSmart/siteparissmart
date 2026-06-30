@@ -65,7 +65,7 @@ app.get('/', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     
     try {
-        // Optionnel : On trie les matchs par ordre chronologique pour le confort des joueurs
+        // Optionnel : On trie les matchs par ordre chronologique décroissant pour les joueurs
         const matches = await Match.find().sort({ date: -1 });
         const allBets = await Bet.find();
         const users = await User.find();
@@ -105,9 +105,10 @@ app.get('/', async (req, res) => {
             });
 
             // 🔄 ÉTAPE B : Calcul de la plus longue série de bons pronos (Badges)
+            // FIX : Tri strict par Timestamp (.getTime()) pour garantir l'ordre chronologique croissant
             const closedMatchesSorted = matches
                 .filter(m => m.result !== null)
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
+                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
             let currentStreak = 0;
             let maxStreak = 0;
@@ -285,8 +286,6 @@ app.get('/admin/:password', async (req, res) => {
     if (req.params.password !== secret) return res.status(403).send("Accès refusé.");
 
     try {
-        // MODIFICATION ICI : On applique le tri décroissant sur l'identifiant unique MongoDB (_id)
-        // Les documents MongoDB contenant nativement leur date de création dans l'ID, -1 affiche le plus récent en premier.
         const allBets = await Bet.find().sort({ _id: -1 }).lean();
         const allMatches = await Match.find();
         const allUsers = await User.find();
@@ -328,10 +327,9 @@ app.post('/admin/match/result', async (req, res) => {
     try {
         const { matchId, result, score1, score2 } = req.body;
         
-        let updateFields = { result: result }; // Enregistre l'équipe qualifiée ('1' ou '2') sélectionnée par l'admin
+        let updateFields = { result: result }; 
         
         if (score1 !== undefined && score2 !== undefined && score1 !== "" && score2 !== "") {
-            // Enregistre de façon brute le score exact à la fin des 90 minutes (ex: 1-1, 2-2 ou autre)
             updateFields.score1 = parseInt(score1);
             updateFields.score2 = parseInt(score2);
         }
